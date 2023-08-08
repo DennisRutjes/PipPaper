@@ -29,6 +29,12 @@ deno task start
 
 This will watch the project directory and restart as necessary.
 
+if you want to buy me a beer:
+
+![](./images/btc.png)
+
+segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
+
 # Current Status
 
 ![](./images/current.png)
