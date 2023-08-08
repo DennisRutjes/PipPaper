@@ -12,9 +12,25 @@ The rationale behind this project is that the current SAAS solutions are pretty 
 
 The stack will be quite simple
 
-1. Deno 
-2. Fresh
-3. SQLLite DB your data wil be saved locally
+# Fresh project
+
+Your new Fresh project is ready to go. You can follow the Fresh "Getting
+Started" guide here: https://fresh.deno.dev/docs/getting-started
+
+### Usage
+
+Make sure to install Deno: https://deno.land/manual/getting_started/installation
+
+Then start the project:
+
+```
+deno task start
+```
+
+This will watch the project directory and restart as necessary.
+
+
+
 
 work in progress but here are some idea' where it should be heading in the future!
 
