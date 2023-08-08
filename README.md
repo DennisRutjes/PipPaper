@@ -39,7 +39,7 @@ segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
 
 ![](./images/current.png)
 
-work in progress but here are some idea' where it should be heading in the future!
+work in progress but here are some ideas where it should be heading in the future!
 
 If you have designs and nice functional additions just add the in the issues section
 
