@@ -29,12 +29,15 @@ deno task start
 
 This will watch the project directory and restart as necessary.
 
+# Current Status
 
-
+![](./images/current.png)
 
 work in progress but here are some idea' where it should be heading in the future!
 
 If you have designs and nice functional additions just add the in the issues section
+
+# Future Status
 
 ## Dashboard
 ![](./images/dashboard.png)
