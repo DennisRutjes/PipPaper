@@ -1,5 +1,5 @@
 enum EnvNames {
-  DB_PATH = "DB_PATH",
+  DATABASE_URL = "DATABASE_URL",
 }
 
 export default EnvNames;

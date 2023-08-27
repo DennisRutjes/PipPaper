@@ -7,10 +7,13 @@ import * as $1 from "./routes/_app.tsx";
 import * as $2 from "./routes/_layout.tsx";
 import * as $3 from "./routes/api/joke.ts";
 import * as $4 from "./routes/greet/[name].tsx";
-import * as $5 from "./routes/index copy.tsx";
-import * as $6 from "./routes/index.tsx";
-import * as $7 from "./routes/trades.tsx";
-import * as $8 from "./routes/upload.tsx";
+import * as $5 from "./routes/greet/index copy.tsx";
+import * as $6 from "./routes/import_trades.tsx";
+import * as $7 from "./routes/index.tsx";
+import * as $8 from "./routes/notebook.tsx";
+import * as $9 from "./routes/stats_daily.tsx";
+import * as $10 from "./routes/trade_log.tsx";
+import * as $11 from "./routes/trades.tsx";
 import * as $$0 from "./islands/Counter.tsx";
 import * as $$1 from "./islands/SideMenu.tsx";
 
@@ -21,10 +24,13 @@ const manifest = {
     "./routes/_layout.tsx": $2,
     "./routes/api/joke.ts": $3,
     "./routes/greet/[name].tsx": $4,
-    "./routes/index copy.tsx": $5,
-    "./routes/index.tsx": $6,
-    "./routes/trades.tsx": $7,
-    "./routes/upload.tsx": $8,
+    "./routes/greet/index copy.tsx": $5,
+    "./routes/import_trades.tsx": $6,
+    "./routes/index.tsx": $7,
+    "./routes/notebook.tsx": $8,
+    "./routes/stats_daily.tsx": $9,
+    "./routes/trade_log.tsx": $10,
+    "./routes/trades.tsx": $11,
   },
   islands: {
     "./islands/Counter.tsx": $$0,

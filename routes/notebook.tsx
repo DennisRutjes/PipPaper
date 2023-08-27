@@ -1,12 +1,8 @@
 import {useSignal} from "@preact/signals";
 import {HandlerContext, Handlers, PageProps} from "$fresh/server.ts";
-import {Note} from "../storage/entities/Note.ts";
-import {Store} from "../storage/StorageService.ts";
-
-import { Signal } from "@preact/signals";
+import SideMenu, {menu_active} from "../islands/SideMenu.tsx";
 
 interface Upload {
-
 }
 
 export const handler: Handlers<Trades> = {
@@ -16,12 +12,11 @@ export const handler: Handlers<Trades> = {
 };
 
 export default function ProjectPage(props: PageProps<Upload>) {
-
     return (
         <>
+            <SideMenu active={"Notebook"} />
             <div className="p-4 sm:ml-64">
-                UPLOAD
-
+                Notebook
             </div>
         </>
     );

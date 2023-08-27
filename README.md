@@ -41,7 +41,7 @@ segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
 
 # Current Status
 
-![](./images/current.png)
+![](./images/current_0827.png)
 
 work in progress but here are some ideas where it should be heading in the
 future!
@@ -68,3 +68,16 @@ section
 ## Trade log
 
 ![](./images/trade-log.png)
+
+
+
+
+# utils
+
+add prisma to project
+
+deno run -A npm:prisma init
+
+deno run -A npm:prisma db push
+
+deno run -A npm:prisma generate --data-proxy

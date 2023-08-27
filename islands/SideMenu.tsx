@@ -1,57 +1,45 @@
-import { JSX } from "preact";
-import { useEffect, useState } from "preact/hooks";
-import { IS_BROWSER } from "$fresh/runtime.ts";
+import {JSX} from "preact";
+import {useEffect, useState} from "preact/hooks";
+import {IS_BROWSER} from "$fresh/runtime.ts";
 
-export default function SideMenuCPY() {
-    const [activeMenu, setActiveMenu] = useState('/un');
+export interface MenuProps {
+    active: string
+}
 
-    useEffect(() => {
-        if (IS_BROWSER) {
-            console.log(window.location.pathname)
-            setActiveMenu(window.location.pathname)
-        }
-    }, [])
+export default function SideMenu({active}: MenuProps) {
+    const menus = [
+        { name: "Import Trades", href: "/import_trades"  },
+        { name: "Dashboard", href: "/"  },
+        { name: "Daily Stats", href: "/stats_daily" },
+        { name: "Trade Log", href: "/trade_log" },
+        { name: "Notebook", href: "/notebook" },
+    ];
 
     return (
         <aside
             id="default-sidebar"
             className="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
-            aria-label="Sidebar">
+            aria-label="Sidebar"
+        >
             <div className="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
                 <ul className="space-y-2 font-medium">
-                    <li>
-                        <a href="/"
-                           className={`flex items-center p-2 rounded-lg group ${
-                               activeMenu === '/' ? 'text-white bg-blue-400' : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                           }`}
-                           onClick={() => setActiveMenu('/')}
-                        >
-                            <span className="ml-3">Start</span>
-                        </a>
-                    </li>
+                    {menus.map((menu) => (
+                        <li>
+                            <a href={menu.href} onclick={() => setActiveMenu(menu.name)}
+                                className={"flex items-center p-2 rounded-lg group " +
+                                    (menu.name == active
+                                        ? "text-white hover:bg-gray-500 "
+                                        : "text-gray-500 hover:text-gray-200 hover:bg-gray-500"
+                                    )}
+                            >
+                                <span className="ml-3"> {menu.name} </span>
+                            </a>
+                        </li>
+                    ))}
 
-                    <li>
-                        <a href="/trades"
-                           className={`flex items-center p-2 rounded-lg group ${
-                               activeMenu === '/trades' ? 'text-white bg-blue-400' : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                           }`}
-                           onClick={() => setActiveMenu('/trades')}
-                        >
-                            <span className="ml-3">Trades</span>
-                        </a>
-                    </li>
 
-                    <li>
-                        <a href="/upload"
-                           className={`flex items-center p-2 rounded-lg group ${
-                               activeMenu === '/upload' ? 'text-white bg-blue-400' : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                           }`}
-                           onClick={() => setActiveMenu('/upload')}
-                        >
-                            <span className="ml-3">Upload</span>
-                        </a>
-                    </li>
                 </ul>
             </div>
-        </aside>);
+        </aside>
+    );
 }

@@ -1,17 +1,19 @@
-import { z } from "../deps.ts";
+import {z} from "../deps.ts";
 
 import EnvNames from "../constants/EnvNames.ts";
 
 function getErrorMessage(environmentVariableName: EnvNames) {
-  return {
-    message: `Missing ${environmentVariableName} environment variable.`,
-  };
+    return {
+        message: `Missing ${environmentVariableName} environment variable.`,
+    };
 }
 
 export const ConfigSchema = z.object({
-  db: z.object({
-    databasePath: z.string().min(1, getErrorMessage(EnvNames.DB_PATH)),
-  }),
+    db: z.object({
+       // databasePath: z.string().min(1, getErrorMessage(EnvNames.DB_PATH)),
+        databaseURL: z.string().min(1, getErrorMessage(EnvNames.DATABASE_URL)),
+
+    }),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
