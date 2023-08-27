@@ -81,3 +81,5 @@ deno run -A npm:prisma init
 deno run -A npm:prisma db push
 
 deno run -A npm:prisma generate --data-proxy
+
+removed prisma experiment, vanilla db access and mapping more tedious, but it is working ¯\_(ツ)_/¯
