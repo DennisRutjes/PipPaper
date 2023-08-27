@@ -41,7 +41,7 @@ segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
 
 # Current Status
 
-![](./images/current_0827.png)
+![](./images/current.png)
 
 work in progress but here are some ideas where it should be heading in the
 future!
