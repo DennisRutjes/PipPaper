@@ -6,3 +6,4 @@
 .env.local
 
 .idea
+/import-data/tradovate_local/

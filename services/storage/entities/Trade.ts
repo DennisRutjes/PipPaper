@@ -5,6 +5,7 @@ export interface Trade {
   Broker: string | null;
   Quantity: number | null;
   PnL: number | null;
+  AdjustedCost: number | null;
   Currency: string | null;
   EntryPrice: number | null;
   EntryTimestamp: number | null;

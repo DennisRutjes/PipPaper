@@ -8,6 +8,7 @@ Performance.csv is equal to a trade (entry & exit)
     buy,sell timestamp buy > sell == long 
     buy,sell fillId
 
+    a fillId can occur for multiple
     Fills.csv
         fillId
         orderId 1:1  Orders.csv

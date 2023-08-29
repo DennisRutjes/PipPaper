@@ -26,13 +26,14 @@ export class StorageSqlite implements Storage {
     createTrade(trade: Trade): Trade {
         const now = Now()
         this.db.query(
-            "INSERT INTO Trade (BrokerTradeID, Symbol, Broker, Quantity, PnL, Currency, EntryPrice, EntryTimestamp, ExitPrice, ExitTimestamp, createdAt, updatedAt) VALUES (:BrokerTradeID, :Symbol, :Broker, :Quantity, :PnL, :Currency, :EntryPrice, :EntryTimestamp, :ExitPrice, :ExitTimestamp, :createdAt,:updatedAt)",
+            "INSERT INTO Trade (BrokerTradeID, Symbol, Broker, Quantity, PnL, AdjustedCost, Currency, EntryPrice, EntryTimestamp, ExitPrice, ExitTimestamp, createdAt, updatedAt) VALUES (:BrokerTradeID, :Symbol, :Broker, :Quantity, :PnL, :AdjustedCost, :Currency, :EntryPrice, :EntryTimestamp, :ExitPrice, :ExitTimestamp, :createdAt,:updatedAt)",
             {
                 BrokerTradeID: trade.BrokerTradeID,
                 Symbol: trade.Symbol,
                 Broker: trade.Broker,
                 Quantity: trade.Quantity,
                 PnL: trade.PnL,
+                AdjustedCost: trade.AdjustedCost,
                 Currency: trade.Currency,
                 EntryPrice: trade.EntryPrice,
                 EntryTimestamp: trade.EntryTimestamp,
@@ -49,14 +50,14 @@ export class StorageSqlite implements Storage {
         )
             .map(([TradeID, BrokerTradeID,
                       Symbol, Broker, Quantity,
-                      PnL, Currency,
+                      PnL, AdjustedCost, Currency,
                       EntryPrice, EntryTimestamp,
                       ExitPrice, ExitTimestamp,
                       createdAt, updatedAt]) => {
                 return <Trade>{
                     TradeID: TradeID, BrokerTradeID: BrokerTradeID,
                     Symbol: Symbol, Broker: Broker, Quantity: Quantity,
-                    PnL: PnL, Currency: Currency,
+                    PnL: PnL, AdjustedCost: AdjustedCost, Currency: Currency,
                     EntryPrice: EntryPrice,
                     EntryTimestamp: EntryTimestamp,
                     ExitPrice: ExitPrice,
@@ -106,19 +107,17 @@ export class StorageSqlite implements Storage {
     }
 
     listTrades(): Trade[] {
-        return this.db.query(
-            "SELECT * FROM Trade ORDER BY TradeID DESC",
-        )
+        return this.db.query("SELECT * FROM Trade ORDER BY TradeID DESC")
             .map(([TradeID, BrokerTradeID,
                       Symbol, Broker, Quantity,
-                      PnL, Currency,
+                      PnL, AdjustedCost, Currency,
                       EntryPrice, EntryTimestamp,
                       ExitPrice, ExitTimestamp,
                       createdAt, updatedAt]) => {
                 return <Trade>{
                     TradeID: TradeID, BrokerTradeID: BrokerTradeID,
                     Symbol: Symbol, Broker: Broker, Quantity: Quantity,
-                    PnL: PnL, Currency: Currency,
+                    PnL: PnL, AdjustedCost: AdjustedCost, Currency: Currency,
                     EntryPrice: EntryPrice,
                     EntryTimestamp: EntryTimestamp,
                     ExitPrice: ExitPrice,

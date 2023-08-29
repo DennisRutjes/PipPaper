@@ -5,6 +5,10 @@ import {asyncArrayFrom} from "https://deno.land/x/csv@v0.7.2/utils.ts";
 import {readLines} from "https://deno.land/std@0.199.0/io/mod.ts";
 import {Trade} from "../../storage/entities/Trade.ts";
 import * as dt from "https://deno.land/std@0.200.0/datetime/mod.ts";
+import {Cost} from "../../storage/entities/Cost.ts";
+
+import {readCSV} from "https://deno.land/x/csv/mod.ts";
+import {deferred} from "https://deno.land/std@0.193.0/async/deferred.ts";
 
 type AnyDict = {
     [key: string]: any
@@ -30,25 +34,21 @@ interface TradeData {
 async function importCsvFile(file: string) {
     const f = await Deno.open(file);
 
-    let header: string[] | undefined;
-    let objects: object[] = [];
-    for await (let line of readLines(f)) {
-        const row = line.split(",")
-        if (!header) {
-            header = row;
-            continue;
-        }
-
+    const objects: object[] = [];
+    for await (const csvObj of readCSVObjects(f)) {
         const obj: {
             [key: string]: string
         } = {};
-        for (let i = 0; i < header.length; i++) {
-            obj[header[i]] = row[i];
-        }
+
+        Object.keys(csvObj).forEach(key => {
+            const normalizeKey = key.replaceAll(" ", "_").trim()
+            obj[normalizeKey] = csvObj[key].trim()
+        });
+
         objects.push(obj)
     }
 
-    f.close()
+    f.close();
 
     return new Promise<object[]>((resolve, reject) => {
         resolve(objects);
@@ -71,9 +71,10 @@ export class TradovateImporter implements Importer {
         return "tradovate";
     }
 
-
-    async importCSV(file: string): Promise<object[]> {
-        return await importCsvFile(this.importPath + "/" + file)
+    async readCosts(file: string): Promise<Cost[]> {
+        return (await importCsvFile(this.importPath + "/" + file))
+            //.map(logAnyDict)
+            .map((anyDict: AnyDict) => mapCost(this.getBroker(), anyDict))
     }
 
     async readTrades(file: string): Promise<Trade[]> {
@@ -82,6 +83,16 @@ export class TradovateImporter implements Importer {
             .map((anyDict: AnyDict) => mapPerformance2Trade(this.getBroker(), anyDict))
     }
 
+}
+
+function mapCost(broker: string, {Contract, Timestamp, Cash_Change_Type, Delta, Currency}: AnyDict): Cost {
+    return <Cost>{
+        Timestamp: dt.parse(Timestamp, "MM/dd/yyyy HH:mm:ss").getTime() / 1000,
+        Contract: Contract,
+        Currency: Currency,
+        Type: Cash_Change_Type,
+        Amount: +Delta
+    }
 }
 
 function logAnyDict(anyDict: AnyDict): AnyDict {
@@ -115,18 +126,31 @@ function mapPerformance2Trade(broker: string, {
 
     const currencyValue: CurrencyValue = parseCurrencyValue(pnl);
 
-    return <Trade>{
+    const trade = <Trade>{
         Symbol: symbol,
         Broker: broker,
         BrokerTradeID: buyFillId + "_" + sellFillId, // create a new unique key
         Quantity: +qty,
         PnL: currencyValue.value,
         Currency: currencyValue.currency,
-        EntryPrice: +buyPrice,
-        EntryTimestamp: dt.parse(boughtTimestamp, "MM/dd/yyyy HH:mm:ss").getTime() / 1000,
-        ExitPrice: +sellPrice,
-        ExitTimestamp: dt.parse(soldTimestamp, "MM/dd/yyyy HH:mm:ss").getTime() / 1000,
     }
+
+    const bTs: number = dt.parse(boughtTimestamp, "MM/dd/yyyy HH:mm:ss").getTime() / 1000
+    const sTs: number = dt.parse(soldTimestamp, "MM/dd/yyyy HH:mm:ss").getTime() / 1000
+
+    if (bTs < sTs) {
+        trade.EntryTimestamp = bTs
+        trade.EntryPrice = +buyPrice
+        trade.ExitTimestamp = sTs
+        trade.ExitPrice = +sellPrice
+    } else {
+        trade.EntryTimestamp = sTs
+        trade.EntryPrice = +sellPrice
+        trade.ExitTimestamp = bTs
+        trade.ExitPrice = +buyPrice
+    }
+
+    return trade
 }
 
 interface CurrencyValue {

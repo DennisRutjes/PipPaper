@@ -15,6 +15,7 @@ create TABLE IF NOT EXISTS Trade (
     Broker TEXT,
     Quantity INTEGER,
     PnL DECIMAL(10, 2),
+    AdjustedCost DECIMAL(10, 2),
     Currency TEXT,
     EntryPrice DECIMAL(10, 2),
     EntryTimestamp INTEGER,

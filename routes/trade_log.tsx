@@ -5,10 +5,13 @@ import {Trade} from "../services/storage/entities/Trade.ts";
 import {Note} from "../services/storage/entities/Note.ts";
 import {store} from "../services/storage/StorageService.ts";
 import * as dt from "https://deno.land/std@0.200.0/datetime/mod.ts";
-
+import { Head } from "$fresh/runtime.ts";
+import { Chart } from "https://deno.land/x/fresh_charts/mod.ts";
+import { ChartColors, transparentize } from "https://deno.land/x/fresh_charts/utils.ts";
 interface TradeLog {
     trades: Trade[]
 }
+
 export const dateInterval = (date1: Date, date2: Date): string => {
     let delta = Math.abs(date1.getTime() - date2.getTime()) * 1000;
     //console.log(delta)
@@ -36,6 +39,13 @@ export const dateInterval = (date1: Date, date2: Date): string => {
     return results.join(' ');
 };
 
+export const getTradeStartdate = (trade: Trade): number => {
+    if (trade.EntryTimestamp < trade.ExitTimestamp) {
+        return trade.EntryTimestamp;
+    }
+    return trade.ExitTimestamp;
+}
+
 export const handler: Handlers<Trades> = {
     async GET(_req, ctx) {
         const trades: Trade[] = store.listTrades();
@@ -53,6 +63,32 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
         <>
             <SideMenu active={"Trade Log"}/>
             <div className="p-4 sm:ml-64">
+                <Chart
+                    type="line"
+                    options={{
+                        devicePixelRatio: 1,
+                        scales: { y: { beginAtZero: true } },
+                    }}
+                    data={{
+                        labels: ["1", "2", "3"],
+                        datasets: [
+                            {
+                                label: "Sessions",
+                                data: [123, 234, 234],
+                                borderColor: ChartColors.Red,
+                                backgroundColor: transparentize(ChartColors.Red, 0.5),
+                                borderWidth: 1,
+                            },
+                            {
+                                label: "Users",
+                                data: [346, 233, 123],
+                                borderColor: ChartColors.Blue,
+                                backgroundColor: transparentize(ChartColors.Blue, 0.5),
+                                borderWidth: 1,
+                            },
+                        ],
+                    }}
+                />
                 <div className="font-medium text-gray-700 text-2xl">YOUR TRADES REPORT</div>
                 <div className="flex flex-col">
                     <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -69,7 +105,6 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <div className="flex flex-col place-items-center ">
                                                 <div>Symbol</div>
-
                                             </div>
                                         </th>
                                         <th scope="col"
@@ -82,7 +117,10 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                         </th>
                                         <th scope="col"
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Open Date
+                                            <div className="flex flex-col place-items-center ">
+                                                <div>Open Date</div>
+                                                <div>(UTC)</div>
+                                            </div>
                                         </th>
                                         <th scope="col"
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -158,16 +196,18 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        Realized R
+                                                        {trade.EntryTimestamp > trade.ExitTimestamp ?
+                                                            ((trade.ExitPrice - trade.EntryPrice) / trade.EntryPrice).toFixed(3)*100
+                                                            : ((trade.EntryPrice - trade.ExitPrice) / trade.ExitPrice).toFixed(3)*100}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="">
-                                                        {dt.format(new Date(trade.EntryTimestamp * 1000), 'yyyy/MM/dd')}
+                                                        {dt.format(new Date(getTradeStartdate(trade) * 1000), 'yyyy/MM/dd')}
                                                         <div className="">
-                                                            {dt.format(new Date(trade.EntryTimestamp * 1000), 'HH:mm:ss')}
+                                                            {dt.format(new Date(getTradeStartdate(trade) * 1000), 'HH:mm:ss')}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -224,14 +264,14 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        {trade.Symbol}
+                                                        {trade.EntryPrice > trade.ExitPrice && trade.PnL > 0 ? "SHORT" : "LONG"}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        {trade.PnL.toFixed(2)}
+                                                        {trade.PnL}
                                                     </div>
                                                 </div>
                                             </td>
