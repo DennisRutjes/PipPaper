@@ -46,7 +46,7 @@ segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
 work in progress but here are some ideas where it should be heading in the
 future!
 
-If you have designs and nice functional additions just add the in the issues
+If you have designs and nice functional additions just add them in the issues
 section
 
 # Future Status

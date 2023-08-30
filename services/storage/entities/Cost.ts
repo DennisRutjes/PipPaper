@@ -4,4 +4,5 @@ export interface Cost {
     Type: string;
     Amount: number;
     Currency: string;
+    tradeFillRefs: number;
 }

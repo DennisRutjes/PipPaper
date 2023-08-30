@@ -5,11 +5,14 @@ import {Trade} from "../services/storage/entities/Trade.ts";
 import {Note} from "../services/storage/entities/Note.ts";
 import {store} from "../services/storage/StorageService.ts";
 import * as dt from "https://deno.land/std@0.200.0/datetime/mod.ts";
-import { Head } from "$fresh/runtime.ts";
-import { Chart } from "https://deno.land/x/fresh_charts/mod.ts";
-import { ChartColors, transparentize } from "https://deno.land/x/fresh_charts/utils.ts";
+import {Head} from "$fresh/runtime.ts";
+import {Chart} from "https://deno.land/x/fresh_charts/mod.ts";
+import {ChartColors, transparentize} from "https://deno.land/x/fresh_charts/utils.ts";
+import {Cost} from "../services/storage/entities/Cost.ts";
+
 interface TradeLog {
     trades: Trade[]
+    averagePnL: number
 }
 
 export const dateInterval = (date1: Date, date2: Date): string => {
@@ -39,26 +42,39 @@ export const dateInterval = (date1: Date, date2: Date): string => {
     return results.join(' ');
 };
 
-export const getTradeStartdate = (trade: Trade): number => {
+export const getTradeStartDate = (trade: Trade): number => {
     if (trade.EntryTimestamp < trade.ExitTimestamp) {
         return trade.EntryTimestamp;
     }
     return trade.ExitTimestamp;
 }
 
+
+// todo config for tradovate margin entries, make config screen
+export const symbolMargin = (symbol: string): number => {
+    if (symbol.startsWith("MES")) {
+        return 50.00
+    }
+    return 500.00;
+}
+
 export const handler: Handlers<Trades> = {
     async GET(_req, ctx) {
         const trades: Trade[] = store.listTrades();
-        // if (!project) {
-        //     return new Response("Project not found", { status: 404 });
-        // }
-        return ctx.render({trades: trades});
+        const averagePnL = trades.reduce((total: number, trade: Trade) => total + trade.PnL + trade.AdjustedCost, 0) / trades.length
+
+        return ctx.render({
+            averagePnL: averagePnL,
+            trades: trades
+        });
 
     },
 };
 
+
 export default function TradeLogPage(props: PageProps<TradeLog>) {
     const trades = props.data.trades;
+    const averagePnL = props.data.averagePnL;
     return (
         <>
             <SideMenu active={"Trade Log"}/>
@@ -67,7 +83,7 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                     type="line"
                     options={{
                         devicePixelRatio: 1,
-                        scales: { y: { beginAtZero: true } },
+                        scales: {y: {beginAtZero: true}},
                     }}
                     data={{
                         labels: ["1", "2", "3"],
@@ -196,18 +212,16 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        {trade.EntryTimestamp > trade.ExitTimestamp ?
-                                                            ((trade.ExitPrice - trade.EntryPrice) / trade.EntryPrice).toFixed(3)*100
-                                                            : ((trade.EntryPrice - trade.ExitPrice) / trade.ExitPrice).toFixed(3)*100}
+                                                        { ((trade.PnL + trade.AdjustedCost) / averagePnL).toFixed(1)}R
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="">
-                                                        {dt.format(new Date(getTradeStartdate(trade) * 1000), 'yyyy/MM/dd')}
+                                                        {dt.format(new Date(getTradeStartDate(trade) * 1000), 'yyyy/MM/dd')}
                                                         <div className="">
-                                                            {dt.format(new Date(getTradeStartdate(trade) * 1000), 'HH:mm:ss')}
+                                                            {dt.format(new Date(getTradeStartDate(trade) * 1000), 'HH:mm:ss')}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -215,14 +229,18 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        net roi
+                                                        {   // temp solution https://optimusfutures.com/tradeblog/archives/futures-trading-return-on-investment
+                                                            ((trade.PnL + trade.AdjustedCost) / (symbolMargin(trade.Symbol) * trade.Quantity) * 100.00).toFixed(2)
+                                                        }%
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        net p&l
+                                                        {
+                                                            trade.PnL + trade.AdjustedCost
+                                                        }
                                                     </div>
                                                 </div>
                                             </td>
@@ -257,7 +275,7 @@ export default function TradeLogPage(props: PageProps<TradeLog>) {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
-                                                        {trade.Symbol}
+                                                        {trade.AdjustedCost}
                                                     </div>
                                                 </div>
                                             </td>
