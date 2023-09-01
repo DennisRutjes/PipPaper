@@ -1,11 +1,12 @@
-import { Note } from "../entities/Note.ts";
+import {Note} from "../entities/Note.ts";
 import {Trade} from "../entities/Trade.ts";
 
 export interface Storage {
-listTrades(): Trade[];
-  createNote(note:Note): Note;
+    listTrades(): Trade[];
 
-  listNotes(): Note[];
+    createNote(note: Note): Note;
 
-  createTrade(trade: Trade): Trade;
+    listNotes(): Note[];
+
+    createTrade(trade: Trade): Trade;
 }

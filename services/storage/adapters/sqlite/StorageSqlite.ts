@@ -107,7 +107,7 @@ export class StorageSqlite implements Storage {
     }
 
     listTrades(): Trade[] {
-        return this.db.query("SELECT * FROM Trade ORDER BY TradeID DESC")
+        return this.db.query("SELECT * FROM Trade ORDER BY TradeID ASC")
             .map(([TradeID, BrokerTradeID,
                       Symbol, Broker, Quantity,
                       PnL, AdjustedCost, Currency,

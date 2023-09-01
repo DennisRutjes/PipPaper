@@ -7,5 +7,6 @@ export default function Layout({ Component, state }: LayoutProps) {
     <div className="layout">
       <Component />
     </div>
+
   );
 }
