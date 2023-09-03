@@ -41,6 +41,20 @@ segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
 
 # Current Status
 
+[TODO(NE)˚Ω](TODO.md)
+
+## Backend
+* Importing broker data
+* database service
+
+## Frontend
+
+TRADE DETAIL: MVP IN PROGRESS
+
+![](./images/trade_detail.png)
+
+TRADE LOG: first Iteration finished
+
 ![](./images/current.png)
 
 work in progress but here are some ideas where it should be heading in the
@@ -49,7 +63,7 @@ future!
 If you have designs and nice functional additions just add them in the issues
 section
 
-# Future Status
+# Future Design
 
 ## Dashboard
 
