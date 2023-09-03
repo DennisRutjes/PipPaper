@@ -41,7 +41,7 @@ segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
 
 # Current Status
 
-[TODO(NE)˚Ω](TODO.md)
+[TODO(NE)](TODO.md)
 
 ## Backend
 * Importing broker data
