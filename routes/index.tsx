@@ -2,8 +2,10 @@ import { Head } from "$fresh/runtime.ts";
 
 import { useSignal } from "@preact/signals";
 import SideMenu from "../islands/SideMenu.tsx";
+import Counter from "../islands/Counter.tsx";
 
 export default function Home() {
+  const count = useSignal(3);
   return (
     <>
       <SideMenu active={"Dashboard"} />
@@ -11,23 +13,7 @@ export default function Home() {
         <div className="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700">
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="flex items-center justify-center h-24 rounded bg-gray-50 dark:bg-gray-800">
-              <p className="text-2xl text-gray-400 dark:text-gray-500">
-                <svg
-                  className="w-3.5 h-3.5"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 18 18"
-                >
-                  <path
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 1v16M1 9h16"
-                  />
-                </svg>
-              </p>
+              <Counter count={count}/>
             </div>
             <div className="flex items-center justify-center h-24 rounded bg-gray-50 dark:bg-gray-800">
               <p className="text-2xl text-gray-400 dark:text-gray-500">

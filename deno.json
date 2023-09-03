@@ -5,7 +5,7 @@
     "update": "deno run -A -r https://fresh.deno.dev/update .",
     "build": "deno run -A dev.ts build",
     "preview": "deno run -A main.ts"
-    },
+  },
   "lint": {
     "rules": {
       "tags": [

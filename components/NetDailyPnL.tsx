@@ -24,7 +24,7 @@ interface NetDailyPnLProps {
 
 export default function NetDailyPnL({trades}: NetDailyPnLProps) {
 
-    const dailyPnL = [12,45,67,80,34-100,12,45,67,80,34-100,12,45,67,80,34-100,12,45,67,80,34-100,12,45,67,80,34-100, ...calculateDailyPnL(trades)]
+    const dailyPnL = calculateDailyPnL(trades).map(t=>t.toFixed(2))
     const colors = dailyPnL.map((value) => value < 0 ? transparentize('rgb(200, 0, 0)', 0.5) : transparentize('rgb(0, 220, 0)', 0.5));
     const borderColors = dailyPnL.map((value) => value < 0 ? transparentize('rgb(200, 0, 0)', 0.0) : transparentize('rgb(0, 220, 0)', 0.0));
     //console.log(dailyPnL)

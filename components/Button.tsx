@@ -2,6 +2,7 @@ import { JSX } from "preact";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 
 export function Button(props: JSX.HTMLAttributes<HTMLButtonElement>) {
+  console.log("IS_BROWSER: ", IS_BROWSER)
   return (
     <button
       {...props}

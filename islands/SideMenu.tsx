@@ -25,7 +25,7 @@ export default function SideMenu({active}: MenuProps) {
                 <ul className="space-y-2 font-medium">
                     {menus.map((menu) => (
                         <li>
-                            <a href={menu.href} onclick={() => setActiveMenu(menu.name)}
+                            <a href={menu.href}
                                 className={"flex items-center p-2 rounded-lg group " +
                                     (menu.name == active
                                         ? "text-white hover:bg-gray-500 "

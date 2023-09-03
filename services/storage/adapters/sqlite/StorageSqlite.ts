@@ -1,9 +1,8 @@
 import * as sqlite from "https://deno.land/x/sqlite@v3.8/mod.ts";
 import {Storage} from "../../ports/Storage.ts";
 import {Note} from "../../entities/Note.ts";
-import readTextFileSync = Deno.readTextFileSync;
 import {Trade} from "../../entities/Trade.ts";
-import {Symbol} from "https://deno.land/x/ts_morph@17.0.1/ts_morph.js";
+import readTextFileSync = Deno.readTextFileSync;
 
 function Now() {
     return Date.now()
@@ -69,6 +68,7 @@ export class StorageSqlite implements Storage {
         return first;
     }
 
+
     createNote(note: Note): Note {
         this.db.query(
             "INSERT INTO Note (NoteData, createdAt, updatedAt) VALUES (:NoteData, strftime('%s', 'now'), strftime('%s', 'now'))",
@@ -126,5 +126,32 @@ export class StorageSqlite implements Storage {
                     updatedAt: updatedAt
                 };
             });
+    }
+
+    getTrade(tradeID: number): Trade {
+        const [first] = this.db.query(
+            "SELECT * FROM Trade WHERE TradeID=:tradeID",
+            {tradeID: tradeID}
+        )
+            .map(([TradeID, BrokerTradeID,
+                      Symbol, Broker, Quantity,
+                      PnL, AdjustedCost, Currency,
+                      EntryPrice, EntryTimestamp,
+                      ExitPrice, ExitTimestamp,
+                      createdAt, updatedAt]) => {
+                return <Trade>{
+                    TradeID: TradeID, BrokerTradeID: BrokerTradeID,
+                    Symbol: Symbol, Broker: Broker, Quantity: Quantity,
+                    PnL: PnL, AdjustedCost: AdjustedCost, Currency: Currency,
+                    EntryPrice: EntryPrice,
+                    EntryTimestamp: EntryTimestamp,
+                    ExitPrice: ExitPrice,
+                    ExitTimestamp: ExitTimestamp,
+                    createdAt: createdAt,
+                    updatedAt: updatedAt
+                };
+            });
+
+        return first
     }
 }

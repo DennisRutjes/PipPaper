@@ -9,4 +9,6 @@ export interface Storage {
     listNotes(): Note[];
 
     createTrade(trade: Trade): Trade;
+
+    getTrade(tradeID: number): Trade;
 }

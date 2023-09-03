@@ -27,6 +27,10 @@ export class StorageService implements Storage {
     listTrades(): Trade[] {
         return this.storagePort.listTrades();
     }
+
+    getTrade(tradeID: number): Trade {
+        return this.storagePort.getTrade(tradeID)
+    }
 }
 
 export const store = new StorageService(

@@ -44,6 +44,7 @@ export default function WinRatio({trades}: WinRatioProps) {
                     {
                         plugins: {
                             title: {
+
                                 display: true,
                                 text: `Win Ratio ${(ratioMap["win"]/trades.length*100).toFixed(1)}%`,
                             }

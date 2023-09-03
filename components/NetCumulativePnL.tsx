@@ -32,6 +32,11 @@ export default function NetCumulativePnL({trades}: NetCumulativePnLProps) {
                             text: 'Net Cumulative P&L',
                         }
                     },
+                    scales :{
+                        x: {
+                            display: false // Hide X axis labels
+                        },
+                    },
                     // scales: {
                     //     x: {
                     //         type: 'time',
@@ -53,7 +58,7 @@ export default function NetCumulativePnL({trades}: NetCumulativePnLProps) {
                                 above: transparentize('rgb(0, 220, 0)', 0.5),   // Area will be red above the origin
                                 below: transparentize('rgb(200, 0, 0)', 0.5)    // And blue below the origin
                             },
-                            label: `$ ${totalPnL.toFixed((2))}`,
+                            label: `$ ${totalPnL.toFixed((2))} `,
                             data: cumulativeNetPnL,
                             backgroundColor: totalPnL > 0 ? transparentize('rgb(0, 220, 0)', 0.5) : transparentize('rgb(200, 0, 0)', 0.5),
                             strokeColor: transparentize('rgb(100, 100, 100)', 0.5),
