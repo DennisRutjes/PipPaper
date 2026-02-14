@@ -203,6 +203,25 @@ export class StorageKV {
     await kv.set(["settings"], settings);
   }
 
+  // ─── Symbol Mappings ──────────────────────────────────────────
+
+  async getSymbolMappings(): Promise<Record<string, string>> {
+    const res = await kv.get<Record<string, string>>(["symbol_mappings"]);
+    return res.value || {};
+  }
+
+  async saveSymbolMapping(brokerSymbol: string, yahooSymbol: string): Promise<void> {
+    const mappings = await this.getSymbolMappings();
+    mappings[brokerSymbol] = yahooSymbol;
+    await kv.set(["symbol_mappings"], mappings);
+  }
+
+  async deleteSymbolMapping(brokerSymbol: string): Promise<void> {
+    const mappings = await this.getSymbolMappings();
+    delete mappings[brokerSymbol];
+    await kv.set(["symbol_mappings"], mappings);
+  }
+
   // ─── Analytics helpers ────────────────────────────────────────
 
   async getSetupPerformance(): Promise<Record<number, { trades: number; wins: number; pnl: number }>> {

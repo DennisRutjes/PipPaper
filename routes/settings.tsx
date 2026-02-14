@@ -17,6 +17,7 @@ interface SettingsData {
     importResult?: { trades: number; notes: number; setups: number; tags: number } | null;
     importError?: string;
     settings?: Record<string, string>;
+    symbolMappings?: Record<string, string>;
     aiModels?: AIModel[];
 }
 
@@ -28,6 +29,7 @@ export const handler: Handlers<SettingsData> = {
         const activeTab = url.searchParams.get("tab") || "tags";
         const tags = await storage.getTags();
         const settings = await storage.getSettings();
+        const symbolMappings = await storage.getSymbolMappings();
         
         let aiModels: AIModel[] = [];
         const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -84,6 +86,23 @@ export const handler: Handlers<SettingsData> = {
             }
         }
 
+        if (action === "save_mapping") {
+            const brokerSymbol = form.get("brokerSymbol")?.toString().trim();
+            const yahooSymbol = form.get("yahooSymbol")?.toString().trim();
+            if (brokerSymbol && yahooSymbol) {
+                await storage.saveSymbolMapping(brokerSymbol, yahooSymbol);
+                saved = true;
+            }
+        }
+
+        if (action === "delete_mapping") {
+            const brokerSymbol = form.get("brokerSymbol")?.toString();
+            if (brokerSymbol) {
+                await storage.deleteSymbolMapping(brokerSymbol);
+                deleted = true;
+            }
+        }
+
         if (action === "create_tag") {
             const name = form.get("name")?.toString() || "";
             const category = (form.get("category")?.toString() || "mistake") as TagCategory;
@@ -110,6 +129,7 @@ export const handler: Handlers<SettingsData> = {
         // Re-fetch data for render
         const tags = await storage.getTags();
         const settings = await storage.getSettings();
+        const symbolMappings = await storage.getSymbolMappings();
         
         let aiModels: AIModel[] = [];
         const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -191,19 +211,20 @@ export const handler: Handlers<SettingsData> = {
 
                     // Refresh tags after import
                     const newTags = await storage.getTags();
-                    return ctx.render({ tags: newTags, activeTab: "general", importResult: counts, settings, aiModels });
+                    const newMappings = await storage.getSymbolMappings();
+                    return ctx.render({ tags: newTags, activeTab: "general", importResult: counts, settings, aiModels, symbolMappings: newMappings });
                 } catch (e) {
-                    return ctx.render({ tags, activeTab: "general", importError: (e as Error).message, settings, aiModels });
+                    return ctx.render({ tags, activeTab: "general", importError: (e as Error).message, settings, aiModels, symbolMappings });
                 }
             }
         }
 
-        return ctx.render({ tags, saved, deleted, activeTab, settings, aiModels });
+        return ctx.render({ tags, saved, deleted, activeTab, settings, aiModels, symbolMappings });
     },
 };
 
 export default function SettingsPage(props: PageProps<SettingsData>) {
-    const { tags, saved, deleted, activeTab, importResult, importError, settings, aiModels } = props.data;
+    const { tags, saved, deleted, activeTab, importResult, importError, settings, aiModels, symbolMappings } = props.data;
 
     const mistakeTags = tags.filter(t => t.Category === "mistake");
     const setupTags = tags.filter(t => t.Category === "setup");
@@ -429,6 +450,59 @@ export default function SettingsPage(props: PageProps<SettingsData>) {
                                     <div>GEMINI_API_KEY=your_api_key_here</div>
                                     <div># ANTHROPIC_API_KEY=your_api_key_here</div>
                                 </div>
+                            </div>
+
+                            {/* Symbol Mappings */}
+                            <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-6">
+                                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Symbol Mappings</h3>
+                                <p class="text-sm text-gray-400 mb-4">
+                                    Map broker symbols (e.g. <code>NQH6</code>) to Yahoo Finance tickers (e.g. <code>NQ=F</code>) for chart data.
+                                </p>
+
+                                {/* List */}
+                                <div class="space-y-2 mb-6">
+                                    {symbolMappings && Object.entries(symbolMappings).map(([broker, yahoo]) => (
+                                        <div key={broker} class="flex items-center justify-between p-3 bg-[#1a1d2e] rounded-lg border border-[#2d3348]">
+                                            <div class="flex items-center gap-3 text-sm">
+                                                <span class="text-white font-medium">{broker}</span>
+                                                <span class="text-gray-500">→</span>
+                                                <span class="text-emerald-400 font-mono">{yahoo}</span>
+                                            </div>
+                                            <form method="POST">
+                                                <input type="hidden" name="action" value="delete_mapping" />
+                                                <input type="hidden" name="activeTab" value="general" />
+                                                <input type="hidden" name="brokerSymbol" value={broker} />
+                                                <button type="submit" class="text-gray-500 hover:text-red-400 transition-colors p-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    ))}
+                                    {(!symbolMappings || Object.keys(symbolMappings).length === 0) && (
+                                        <div class="text-sm text-gray-600 italic">No custom mappings defined.</div>
+                                    )}
+                                </div>
+
+                                {/* Add Form */}
+                                <form method="POST" class="flex gap-3 items-end">
+                                    <input type="hidden" name="action" value="save_mapping" />
+                                    <input type="hidden" name="activeTab" value="general" />
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1.5">Broker Symbol</label>
+                                        <input name="brokerSymbol" type="text" required placeholder="e.g. NQH6"
+                                            class="w-full bg-[#1a1d2e] border border-[#2d3348] text-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none" />
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1.5">Yahoo Symbol</label>
+                                        <input name="yahooSymbol" type="text" required placeholder="e.g. NQ=F"
+                                            class="w-full bg-[#1a1d2e] border border-[#2d3348] text-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none" />
+                                    </div>
+                                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors h-[38px]">
+                                        Add
+                                    </button>
+                                </form>
                             </div>
 
                             {/* Data Management — Export & Import */}

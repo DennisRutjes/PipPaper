@@ -20,10 +20,14 @@ import * as $14 from "./routes/trade_log.tsx";
 import * as $$0 from "./islands/AICoachButton.tsx";
 import * as $$1 from "./islands/AddTradeForm.tsx";
 import * as $$2 from "./islands/CandlestickChart.tsx";
-import * as $$3 from "./islands/RichEditor.tsx";
-import * as $$4 from "./islands/SideMenu.tsx";
-import * as $$5 from "./islands/TradeLogTable.tsx";
-import * as $$6 from "./islands/chart.tsx";
+import * as $$3 from "./islands/DeleteTradeButton.tsx";
+import * as $$4 from "./islands/ImportProcessor.tsx";
+import * as $$5 from "./islands/Modal.tsx";
+import * as $$6 from "./islands/RichEditor.tsx";
+import * as $$7 from "./islands/SideMenu.tsx";
+import * as $$8 from "./islands/Toast.tsx";
+import * as $$9 from "./islands/TradeLogTable.tsx";
+import * as $$10 from "./islands/chart.tsx";
 
 const manifest = {
   routes: {
@@ -47,10 +51,14 @@ const manifest = {
     "./islands/AICoachButton.tsx": $$0,
     "./islands/AddTradeForm.tsx": $$1,
     "./islands/CandlestickChart.tsx": $$2,
-    "./islands/RichEditor.tsx": $$3,
-    "./islands/SideMenu.tsx": $$4,
-    "./islands/TradeLogTable.tsx": $$5,
-    "./islands/chart.tsx": $$6,
+    "./islands/DeleteTradeButton.tsx": $$3,
+    "./islands/ImportProcessor.tsx": $$4,
+    "./islands/Modal.tsx": $$5,
+    "./islands/RichEditor.tsx": $$6,
+    "./islands/SideMenu.tsx": $$7,
+    "./islands/Toast.tsx": $$8,
+    "./islands/TradeLogTable.tsx": $$9,
+    "./islands/chart.tsx": $$10,
   },
   baseUrl: import.meta.url,
 };

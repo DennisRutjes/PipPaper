@@ -1,3 +1,5 @@
+import { storage } from "../storage/StorageKV.ts";
+
 export interface Candle {
     t: number;   // timestamp (seconds)
     o: number;   // open
@@ -15,7 +17,7 @@ export interface KlineData {
 }
 
 // Simple symbol mapping for futures → Yahoo Finance ticker
-const SYMBOL_MAP: Record<string, string> = {
+const DEFAULT_SYMBOL_MAP: Record<string, string> = {
     "ES": "ES=F",
     "NQ": "NQ=F",
     "MES": "ES=F",
@@ -32,13 +34,21 @@ const SYMBOL_MAP: Record<string, string> = {
     "6J": "JPYUSD=X",
 };
 
-function mapSymbol(symbol: string): string {
-    // Check exact match first
-    if (SYMBOL_MAP[symbol]) return SYMBOL_MAP[symbol];
-    // Check prefix match for futures with month codes (e.g. MESU3 → ES=F)
+async function mapSymbol(symbol: string): Promise<string> {
+    // 1. Check custom user mappings first
+    const userMappings = await storage.getSymbolMappings();
+    if (userMappings[symbol]) return userMappings[symbol];
+
+    // 2. Check default exact match
+    if (DEFAULT_SYMBOL_MAP[symbol]) return DEFAULT_SYMBOL_MAP[symbol];
+
+    // 3. Check regex/prefix logic for futures
+    // Strip futures codes like H6, U3, Z24
     const base = symbol.replace(/[FGHJKMNQUVXZ]\d{1,2}$/i, "");
-    if (SYMBOL_MAP[base]) return SYMBOL_MAP[base];
-    // Default: use as-is (works for stocks like AAPL, TSLA)
+    if (userMappings[base]) return userMappings[base]; // Check custom mapping for base
+    if (DEFAULT_SYMBOL_MAP[base]) return DEFAULT_SYMBOL_MAP[base];
+
+    // 4. Default: use as-is
     return symbol;
 }
 
@@ -47,7 +57,7 @@ export async function fetchKlines(
     entryTimestamp: number,
     exitTimestamp: number,
 ): Promise<KlineData> {
-    const yahooSymbol = mapSymbol(symbol);
+    const yahooSymbol = await mapSymbol(symbol);
 
     // Calculate range: show ~30 candles before entry and ~10 after exit
     const tradeDuration = Math.abs(exitTimestamp - entryTimestamp);
