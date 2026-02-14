@@ -6,6 +6,7 @@ import type {Signal} from "@preact/signals";
 interface TradeLogTableProps {
     trades: Trade[];
     selectedTradeID: Signal<string>;
+    averagePnL: number;
 }
 
 
@@ -44,12 +45,10 @@ export const getTradeStartDate = (trade: Trade): number => {
 }
 
 export default function TradeLogTable(props: TradeLogTableProps) {
-    console.log("TradeLogTable IS_BROWSER: ", IS_BROWSER)
-    const trades = props.trades
+    const trades = props.trades;
+    const averagePnL = props.averagePnL;
 
-    const averagePnL = trades.reduce((total: number, trade: Trade) => total + trade.PnL + trade.AdjustedCost, 0) / trades.length
     const handleClick = (tradeId: string) => {
-        console.log(tradeId)
         props.selectedTradeID.value = tradeId
         window.location.href = `/trade/${tradeId}`;
     }
@@ -129,7 +128,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                         className="cursor-pointer hover:bg-gray-100 active:bg-red-200">
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center flex-shrink-0">
-                                {trade.PnL < 0 ? (
+                                {trade.PnL && trade.PnL < 0 ? (
                                     <div
                                         className="border-2 border-solid border-red-500 rounded-xl font-bold text-red-500 px-1 ">
                                         <div className="w-20 px-5 py-1 flex items-center ">
@@ -155,7 +154,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
-                                    {((trade.PnL + trade.AdjustedCost) / averagePnL).toFixed(1)}R
+                                    {(( (trade.PnL || 0) + (trade.AdjustedCost || 0)) / (averagePnL || 1)).toFixed(1)}R
                                 </div>
                             </div>
                         </td>
@@ -173,7 +172,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
                                     {
-                                        (trade.PnL + trade.AdjustedCost).toFixed(2)
+                                        ((trade.PnL || 0) + (trade.AdjustedCost || 0)).toFixed(2)
                                     }
                                 </div>
                             </div>
@@ -209,14 +208,14 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
-                                    {trade.AdjustedCost.toFixed(2)}
+                                    {(trade.AdjustedCost || 0).toFixed(2)}
                                 </div>
                             </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
-                                    {trade.EntryPrice > trade.ExitPrice && trade.PnL > 0 ? "SHORT" : "LONG"}
+                                    {(trade.EntryPrice || 0) > (trade.ExitPrice || 0) && (trade.PnL || 0) > 0 ? "SHORT" : "LONG"}
                                 </div>
                             </div>
                         </td>

@@ -82,7 +82,7 @@
       "Verify table shows imported trades",
       "Check columns: Date, Symbol, Side, P&L"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 8,
@@ -106,7 +106,7 @@
       "Verify navigation to Trade Detail page",
       "Check all trade execution details are visible"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 10,
@@ -119,7 +119,7 @@
       "Save",
       "Reload page and verify notes persist"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 11,
