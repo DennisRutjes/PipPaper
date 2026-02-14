@@ -4,12 +4,13 @@
     - [ ] paging
     - [ ] broker selection / show broker
 - Trade Detail CRUD
-    - [ ] show data
+    - [x] show data
     - [ ] Trade kline graphics with trade entries max draw down?
     - [ ] show entry/exit reasons (limit,stop,exit) add data from broker, make them editable
-    - [ ] add note
-    - [ ] add setup
-    - [ ] add tags
+    - [x] add note
+    - [x] add setup
+    - [x] add tags
+    - [x] AI Coach Integration
 - [x] Dashboard
 - [x] Import
     - [x] Backend import
