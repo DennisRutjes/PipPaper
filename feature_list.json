@@ -9,7 +9,7 @@
       "Create .env.example with template variables",
       "Verify .env is not tracked by git"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 2,
@@ -22,7 +22,7 @@
       "Upload file",
       "Verify success message"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 3,
@@ -34,7 +34,7 @@
       "Check database for parsed trades",
       "Verify entry price, exit price, time, and P&L match CSV"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 4,
