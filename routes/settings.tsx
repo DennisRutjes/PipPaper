@@ -38,7 +38,12 @@ export const handler: Handlers<SettingsData> = {
                     const data = await res.json();
                     if (data.models) {
                         aiModels = data.models
-                            .filter((m: any) => m.name.includes("gemini") && m.supportedGenerationMethods?.includes("generateContent"))
+                            .filter((m: any) => {
+                                const n = m.name.toLowerCase();
+                                return (n.includes("gemini-1.5-pro") || n.includes("gemini-1.5-flash") || n.includes("gemini-1.0-pro") || n.includes("gemini-pro")) 
+                                    && !n.includes("vision") // Exclude vision-only if any
+                                    && m.supportedGenerationMethods?.includes("generateContent");
+                            })
                             .map((m: any) => ({
                                 name: m.name.replace("models/", ""),
                                 displayName: m.displayName || m.name.replace("models/", ""),
