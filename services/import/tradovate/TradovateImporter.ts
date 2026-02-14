@@ -200,8 +200,12 @@ interface CurrencyValue {
 
 function parseCurrencyValue(str: string): CurrencyValue {
     if (!str) return {currency: "?", value: 0.0};
+    
+    // Remove commas first
+    const cleanStr = str.replace(/,/g, "");
+    
     const regex = /^(\$)(\()?(.+?)(\))?$/;
-    const matches = str.match(regex);
+    const matches = cleanStr.match(regex);
 
     if (!matches) {
         return {currency: "?", value: 0.0};
