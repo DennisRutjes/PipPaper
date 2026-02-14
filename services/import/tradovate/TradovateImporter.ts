@@ -108,6 +108,7 @@ export class TradovateImporter implements Importer {
         return (await importCsvFile(this.importPath + "/" + file))
             //.map(logAnyDict)
             .map((anyDict: AnyDict) => mapPerformance2Trade(this.getBroker(), anyDict))
+            .filter((t: Trade | null) => t !== null) as Trade[]
     }
 
     async parseTrades(content: string): Promise<Trade[]> {
