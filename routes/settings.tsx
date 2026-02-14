@@ -1,5 +1,6 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import SideMenu from "../islands/SideMenu.tsx";
+import DeleteAllDataButton from "../islands/DeleteAllDataButton.tsx";
 import { storage } from "../services/storage/StorageKV.ts";
 import { Tag, TagCategory } from "../services/storage/entities/Tag.ts";
 
@@ -101,6 +102,12 @@ export const handler: Handlers<SettingsData> = {
                 await storage.deleteSymbolMapping(brokerSymbol);
                 deleted = true;
             }
+        }
+
+        if (action === "clear_trades") {
+            await storage.clearTrades();
+            // Clear symbol mappings too? No, usually keep config.
+            saved = true; // reusing saved flag for success message
         }
 
         if (action === "create_tag") {
@@ -503,6 +510,18 @@ export default function SettingsPage(props: PageProps<SettingsData>) {
                                         Add
                                     </button>
                                 </form>
+                            </div>
+
+                            {/* Danger Zone */}
+                            <div class="bg-[#141622] rounded-xl border border-red-900/30 p-6">
+                                <h3 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-4">Danger Zone</h3>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-white font-medium text-sm">Clear All Trades</div>
+                                        <div class="text-gray-500 text-xs mt-1">Permanently delete all imported and manual trades. This action cannot be undone.</div>
+                                    </div>
+                                    <DeleteAllDataButton />
+                                </div>
                             </div>
 
                             {/* Data Management — Export & Import */}

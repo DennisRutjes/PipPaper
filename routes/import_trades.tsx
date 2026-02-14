@@ -2,7 +2,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { Importer } from "../services/import/ImporterService.ts";
 import SideMenu from "../islands/SideMenu.tsx";
 import Toast from "../islands/Toast.tsx";
-import ImportProcessor from "../islands/ImportProcessor.tsx";
+import ImportForm from "../islands/ImportForm.tsx";
 
 interface ImportData {
     count?: number;
@@ -20,14 +20,32 @@ export const handler: Handlers<ImportData> = {
             const file = form.get("file") as File;
 
             if (!file) {
+                if (req.headers.get("Accept") === "application/json") {
+                    return new Response(JSON.stringify({ error: "No file uploaded" }), {
+                        headers: { "Content-Type": "application/json" },
+                        status: 400
+                    });
+                }
                 return ctx.render({ error: "No file uploaded" });
             }
 
             const content = await file.text();
             const importedIds = await Importer.importTradovateTrades(content);
 
+            if (req.headers.get("Accept") === "application/json") {
+                return new Response(JSON.stringify({ count: importedIds.length, importedIds }), {
+                    headers: { "Content-Type": "application/json" }
+                });
+            }
+
             return ctx.render({ count: importedIds.length, importedIds });
         } catch (e) {
+            if (req.headers.get("Accept") === "application/json") {
+                return new Response(JSON.stringify({ error: (e as Error).message }), {
+                    headers: { "Content-Type": "application/json" },
+                    status: 500
+                });
+            }
             return ctx.render({ error: (e as Error).message });
         }
     },
@@ -52,52 +70,8 @@ export default function ImportPage(props: PageProps<ImportData>) {
                         <p class="text-sm text-gray-500 mt-1">Upload your broker exports to start tracking</p>
                     </div>
 
-                    {/* Progress Processor */}
-                    {importedIds && importedIds.length > 0 && (
-                        <ImportProcessor importedIds={importedIds} />
-                    )}
-
-                    {/* Upload Card */}
-                    <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-8">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-semibold text-white">Tradovate CSV Upload</h2>
-                                <p class="text-sm text-gray-500">Select your 'Performance.csv' file exported from Tradovate</p>
-                            </div>
-                        </div>
-
-                        <form method="POST" encType="multipart/form-data" class="space-y-6">
-                            <label htmlFor="dropzone-file" class="flex flex-col items-center justify-center w-full h-52 border-2 border-[#2d3348] border-dashed rounded-xl cursor-pointer bg-[#1a1d2e] hover:bg-[#1e2235] hover:border-emerald-500/30 transition-all">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <svg class="w-10 h-10 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p class="mb-2 text-sm text-gray-400">
-                                        <span class="font-semibold text-emerald-400">Click to upload</span> or drag and drop
-                                    </p>
-                                    <p class="text-xs text-gray-600">CSV files only (Performance.csv)</p>
-                                </div>
-                                <input id="dropzone-file" name="file" type="file" class="hidden" accept=".csv" required />
-                            </label>
-
-                            <div class="flex justify-end">
-                                <button
-                                    type="submit"
-                                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    </svg>
-                                    Import Trades
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    {/* AJAX Import Form (Handles Upload & Progress) */}
+                    <ImportForm />
 
                     {/* Supported Brokers */}
                     <div class="mt-8 bg-[#141622] rounded-xl border border-[#1e2235] p-6">
