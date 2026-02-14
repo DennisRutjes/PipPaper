@@ -1,5 +1,6 @@
 import { Trade } from "../storage/entities/Trade.ts";
 import { storage } from "../storage/StorageKV.ts";
+import { getSymbolMultiplier } from "../config/SymbolConfig.ts";
 
 export interface AICoachResult {
     advice: string;
@@ -8,20 +9,25 @@ export interface AICoachResult {
     model: string;
 }
 
-function buildPrompt(trade: Trade, journalNotes?: string): string {
+async function buildPrompt(trade: Trade, journalNotes?: string): Promise<string> {
     const side = trade.Side || ((trade.EntryPrice || 0) > (trade.ExitPrice || 0) && (trade.PnL || 0) > 0 ? "SHORT" : "LONG");
     const pnl = trade.PnL || 0;
     const netPnl = pnl + (trade.AdjustedCost || 0);
     const durationMs = Math.abs(trade.ExitTimestamp - trade.EntryTimestamp) * 1000;
     const durationMin = Math.round(durationMs / 60000);
     
-    // Calculate R-Multiple
+    // Calculate R-Multiple with Multiplier
     let rMultiple = "N/A";
     if (trade.StopLoss && trade.EntryPrice) {
-        const risk = Math.abs(trade.EntryPrice - trade.StopLoss);
-        if (risk > 0) {
-            const r = netPnl / (risk * (trade.Quantity || 1));
-            rMultiple = r.toFixed(2) + "R";
+        const riskPrice = Math.abs(trade.EntryPrice - trade.StopLoss);
+        if (riskPrice > 0) {
+            const multiplier = await getSymbolMultiplier(trade.Symbol || "");
+            const riskDollars = riskPrice * multiplier * (trade.Quantity || 1);
+            
+            if (riskDollars > 0) {
+                const r = netPnl / riskDollars;
+                rMultiple = r.toFixed(2) + "R";
+            }
         }
     }
 
@@ -65,7 +71,7 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string): Promis
         throw new Error("GEMINI_API_KEY not configured. Add it to your .env file.");
     }
 
-    const prompt = buildPrompt(trade, journalNotes);
+    const prompt = await buildPrompt(trade, journalNotes);
     
     // Get model from settings or default to flagship
     const settings = await storage.getSettings();

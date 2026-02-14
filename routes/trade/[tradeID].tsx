@@ -11,26 +11,31 @@ import { Note } from "../../services/storage/entities/Note.ts";
 import { Tag } from "../../services/storage/entities/Tag.ts";
 import { dateInterval, getTradeSide, formatDate } from "../../services/utils/utils.ts";
 
+import { getSymbolMultiplier } from "../../services/config/SymbolConfig.ts";
+
 interface TradeDetailData {
-    trade: Trade | null;
+    trade: Trade;
     setups: Setup[];
     tags: Tag[];
-    tradeNote: Note | null;
+    note?: Note | null;
+    tradeNote?: Note | null; // Consolidate these?
+    multiplier: number;
     notesSaved?: boolean;
     setupsSaved?: boolean;
 }
 
 export const handler: Handlers<TradeDetailData> = {
-    async GET(_req, ctx) {
+    async GET(req, ctx) {
         const tradeID = ctx.params.tradeID;
         const trade = await storage.getTrade(tradeID);
         if (!trade) return ctx.renderNotFound();
 
         const setups = await storage.getSetups();
         const tags = await storage.getTags();
-        const tradeNote = await storage.getTradeNote(tradeID);
+        const note = await storage.getTradeNote(tradeID);
+        const multiplier = await getSymbolMultiplier(trade.Symbol || "");
 
-        return ctx.render({ trade, setups, tags, tradeNote });
+        return ctx.render({ trade, setups, tags, note, multiplier });
     },
     async POST(req, ctx) {
         const tradeID = ctx.params.tradeID;
@@ -92,7 +97,7 @@ export const handler: Handlers<TradeDetailData> = {
 };
 
 export default function TradeDetail(props: PageProps<TradeDetailData>) {
-    const { trade, setups, tags, tradeNote, notesSaved, setupsSaved } = props.data;
+    const { trade, setups, tags, tradeNote, notesSaved, setupsSaved, multiplier } = props.data;
     const mistakeTags = tags.filter(t => t.Category === "mistake");
     if (!trade) return <div class="text-white p-8">Trade not found</div>;
 
@@ -108,7 +113,7 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
         ? Math.abs((trade.EntryPrice || 0) - trade.StopLoss)
         : null;
     const rMultiple = riskPerShare && riskPerShare > 0
-        ? (netPnl / (riskPerShare * (trade.Quantity || 1))).toFixed(2)
+        ? (netPnl / (riskPerShare * multiplier * (trade.Quantity || 1))).toFixed(2)
         : null;
 
     return (
