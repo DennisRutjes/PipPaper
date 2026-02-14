@@ -1,5 +1,7 @@
 # PipPaper
 
+![PipPaper Infographic](images/infographic.png)
+
 ### The Open Source TradeZella Alternative
 
 PipPaper is a comprehensive trade journaling and analysis platform designed to replicate the core functionality of premium tools like TradeZella, but open source and self-hosted. Built with Deno and Fresh, it provides advanced dashboards, trade logging, AI coaching, and more — all running locally so your data never leaves your machine.
