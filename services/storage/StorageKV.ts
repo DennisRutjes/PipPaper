@@ -222,6 +222,25 @@ export class StorageKV {
     await kv.set(["symbol_mappings"], mappings);
   }
 
+  // ─── Symbol Multipliers ───────────────────────────────────────
+
+  async getSymbolMultipliers(): Promise<Record<string, number>> {
+    const res = await kv.get<Record<string, number>>(["symbol_multipliers"]);
+    return res.value || {};
+  }
+
+  async saveSymbolMultiplier(symbol: string, multiplier: number): Promise<void> {
+    const multipliers = await this.getSymbolMultipliers();
+    multipliers[symbol] = multiplier;
+    await kv.set(["symbol_multipliers"], multipliers);
+  }
+
+  async deleteSymbolMultiplier(symbol: string): Promise<void> {
+    const multipliers = await this.getSymbolMultipliers();
+    delete multipliers[symbol];
+    await kv.set(["symbol_multipliers"], multipliers);
+  }
+
   // ─── Analytics helpers ────────────────────────────────────────
 
   async getSetupPerformance(): Promise<Record<number, { trades: number; wins: number; pnl: number }>> {

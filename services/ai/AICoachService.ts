@@ -5,6 +5,7 @@ import { getSymbolMultiplier } from "../config/SymbolConfig.ts";
 export interface AICoachResult {
     advice: string;
     rating?: number;
+    grade?: string;
     provider: string;
     model: string;
 }
@@ -73,9 +74,9 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string): Promis
 
     const prompt = await buildPrompt(trade, journalNotes);
     
-    // Get model from settings or default to flagship
+    // Get model from settings, env, or default to flagship
     const settings = await storage.getSettings();
-    const model = settings.ai_model || "gemini-1.5-pro";
+    const model = settings.ai_model || Deno.env.get("AI_MODEL") || "gemini-1.5-pro";
 
     // Use Gemini REST API directly (no npm dependency needed)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -100,6 +101,7 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string): Promis
     
     let text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     let rating: number | undefined;
+    let grade: string | undefined;
     
     if (!text) {
         if (data.error) {
@@ -115,7 +117,13 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string): Promis
         if (ratingMatch && ratingMatch[1]) {
             rating = parseInt(ratingMatch[1]);
         }
+
+        // Extract grade
+        const gradeMatch = text.match(/\*\*Trade Grade\*\*:?\s*([A-F][+-]?)/i) || text.match(/Trade Grade:?\s*([A-F][+-]?)/i);
+        if (gradeMatch && gradeMatch[1]) {
+            grade = gradeMatch[1].toUpperCase();
+        }
     }
 
-    return { advice: text, rating, provider: "gemini", model };
+    return { advice: text, rating, grade, provider: "gemini", model };
 }

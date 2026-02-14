@@ -32,6 +32,7 @@ export interface Trade {
     AIProvider?: string | null;  // Which LLM provided the advice (gemini/claude)
     AITimestamp?: number | null;  // When the advice was generated
     AIRating?: number | null;    // AI-generated rating (1-5)
+    AIGrade?: string | null;     // AI-generated letter grade (A+, A, B, C...)
     KlineData?: any;             // Cached kline data { symbol, interval, candles, fetchedAt }
     createdAt: number | null;
     updatedAt: number | null;

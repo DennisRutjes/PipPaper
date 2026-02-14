@@ -4,6 +4,7 @@ import RichEditor from "../../islands/RichEditor.tsx";
 import AICoachButton from "../../islands/AICoachButton.tsx";
 import CandlestickChart from "../../islands/CandlestickChart.tsx";
 import DeleteTradeButton from "../../islands/DeleteTradeButton.tsx";
+import RiskCalculator from "../../islands/RiskCalculator.tsx";
 import { storage } from "../../services/storage/StorageKV.ts";
 import { Trade } from "../../services/storage/entities/Trade.ts";
 import { Setup } from "../../services/storage/entities/Setup.ts";
@@ -11,7 +12,7 @@ import { Note } from "../../services/storage/entities/Note.ts";
 import { Tag } from "../../services/storage/entities/Tag.ts";
 import { dateInterval, getTradeSide, formatDate } from "../../services/utils/utils.ts";
 
-import { getSymbolMultiplier } from "../../services/config/SymbolConfig.ts";
+import { getSymbolMultiplier, getTickSize } from "../../services/config/SymbolConfig.ts";
 
 interface TradeDetailData {
     trade: Trade;
@@ -20,6 +21,7 @@ interface TradeDetailData {
     note?: Note | null;
     tradeNote?: Note | null; // Consolidate these?
     multiplier: number;
+    tickSize: number;
     notesSaved?: boolean;
     setupsSaved?: boolean;
 }
@@ -34,8 +36,9 @@ export const handler: Handlers<TradeDetailData> = {
         const tags = await storage.getTags();
         const note = await storage.getTradeNote(tradeID);
         const multiplier = await getSymbolMultiplier(trade.Symbol || "");
+        const tickSize = getTickSize(trade.Symbol || "");
 
-        return ctx.render({ trade, setups, tags, note, multiplier });
+        return ctx.render({ trade, setups, tags, note, multiplier, tickSize });
     },
     async POST(req, ctx) {
         const tradeID = ctx.params.tradeID;
@@ -91,13 +94,18 @@ export const handler: Handlers<TradeDetailData> = {
         const tags = await storage.getTags();
         const tradeNote = await storage.getTradeNote(tradeID);
         const updatedTrade = await storage.getTrade(tradeID);
+        
+        if (!updatedTrade) return ctx.renderNotFound();
 
-        return ctx.render({ trade: updatedTrade, setups, tags, tradeNote, notesSaved, setupsSaved });
+        const multiplier = await getSymbolMultiplier(updatedTrade.Symbol || "");
+        const tickSize = getTickSize(updatedTrade.Symbol || "");
+
+        return ctx.render({ trade: updatedTrade, setups, tags, tradeNote, notesSaved, setupsSaved, multiplier, tickSize });
     },
 };
 
 export default function TradeDetail(props: PageProps<TradeDetailData>) {
-    const { trade, setups, tags, tradeNote, notesSaved, setupsSaved, multiplier } = props.data;
+    const { trade, setups, tags, tradeNote, notesSaved, setupsSaved, multiplier, tickSize } = props.data;
     const mistakeTags = tags.filter(t => t.Category === "mistake");
     if (!trade) return <div class="text-white p-8">Trade not found</div>;
 
@@ -191,16 +199,15 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                                     )}
 
                                     <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-xs font-medium text-gray-500 mb-2">Stop Loss</label>
-                                            <input name="stopLoss" type="number" step="any" value={trade.StopLoss || ""} placeholder="e.g. 4440"
-                                                class="w-full bg-[#1a1d2e] border border-[#2d3348] text-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none" />
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium text-gray-500 mb-2">Profit Target</label>
-                                            <input name="profitTarget" type="number" step="any" value={trade.ProfitTarget || ""} placeholder="e.g. 4470"
-                                                class="w-full bg-[#1a1d2e] border border-[#2d3348] text-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none" />
-                                        </div>
+                                        <RiskCalculator
+                                            initialStopLoss={trade.StopLoss || null}
+                                            initialProfitTarget={trade.ProfitTarget || null}
+                                            entryPrice={trade.EntryPrice || 0}
+                                            multiplier={multiplier}
+                                            quantity={trade.Quantity || 1}
+                                            side={side}
+                                            tickSize={tickSize}
+                                        />
 
                                         {rMultiple && (
                                             <div class="flex justify-between items-center py-2 border-t border-[#1e2235]">
@@ -334,6 +341,7 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                                 tradeId={trade.BrokerTradeID}
                                 existingAdvice={trade.AIAdvice}
                                 aiRating={trade.AIRating}
+                                aiGrade={trade.AIGrade}
                                 aiProvider={trade.AIProvider}
                                 aiTimestamp={trade.AITimestamp}
                             />

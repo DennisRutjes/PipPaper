@@ -20,14 +20,17 @@ import * as $14 from "./routes/trade_log.tsx";
 import * as $$0 from "./islands/AICoachButton.tsx";
 import * as $$1 from "./islands/AddTradeForm.tsx";
 import * as $$2 from "./islands/CandlestickChart.tsx";
-import * as $$3 from "./islands/DeleteTradeButton.tsx";
-import * as $$4 from "./islands/ImportProcessor.tsx";
-import * as $$5 from "./islands/Modal.tsx";
-import * as $$6 from "./islands/RichEditor.tsx";
-import * as $$7 from "./islands/SideMenu.tsx";
-import * as $$8 from "./islands/Toast.tsx";
-import * as $$9 from "./islands/TradeLogTable.tsx";
-import * as $$10 from "./islands/chart.tsx";
+import * as $$3 from "./islands/DeleteAllDataButton.tsx";
+import * as $$4 from "./islands/DeleteTradeButton.tsx";
+import * as $$5 from "./islands/ImportForm.tsx";
+import * as $$6 from "./islands/ImportProcessor.tsx";
+import * as $$7 from "./islands/Modal.tsx";
+import * as $$8 from "./islands/RichEditor.tsx";
+import * as $$9 from "./islands/RiskCalculator.tsx";
+import * as $$10 from "./islands/SideMenu.tsx";
+import * as $$11 from "./islands/Toast.tsx";
+import * as $$12 from "./islands/TradeLogTable.tsx";
+import * as $$13 from "./islands/chart.tsx";
 
 const manifest = {
   routes: {
@@ -51,14 +54,17 @@ const manifest = {
     "./islands/AICoachButton.tsx": $$0,
     "./islands/AddTradeForm.tsx": $$1,
     "./islands/CandlestickChart.tsx": $$2,
-    "./islands/DeleteTradeButton.tsx": $$3,
-    "./islands/ImportProcessor.tsx": $$4,
-    "./islands/Modal.tsx": $$5,
-    "./islands/RichEditor.tsx": $$6,
-    "./islands/SideMenu.tsx": $$7,
-    "./islands/Toast.tsx": $$8,
-    "./islands/TradeLogTable.tsx": $$9,
-    "./islands/chart.tsx": $$10,
+    "./islands/DeleteAllDataButton.tsx": $$3,
+    "./islands/DeleteTradeButton.tsx": $$4,
+    "./islands/ImportForm.tsx": $$5,
+    "./islands/ImportProcessor.tsx": $$6,
+    "./islands/Modal.tsx": $$7,
+    "./islands/RichEditor.tsx": $$8,
+    "./islands/RiskCalculator.tsx": $$9,
+    "./islands/SideMenu.tsx": $$10,
+    "./islands/Toast.tsx": $$11,
+    "./islands/TradeLogTable.tsx": $$12,
+    "./islands/chart.tsx": $$13,
   },
   baseUrl: import.meta.url,
 };

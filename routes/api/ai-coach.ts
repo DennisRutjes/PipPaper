@@ -28,6 +28,7 @@ export const handler: Handlers = {
             await storage.updateTrade(tradeId, {
                 AIAdvice: result.advice,
                 AIRating: result.rating,
+                AIGrade: result.grade,
                 AIProvider: `${result.provider}/${result.model}`,
                 AITimestamp: Date.now() / 1000,
             });
@@ -36,6 +37,7 @@ export const handler: Handlers = {
                 success: true,
                 advice: result.advice,
                 rating: result.rating,
+                grade: result.grade,
                 provider: result.provider,
                 model: result.model,
             }), {

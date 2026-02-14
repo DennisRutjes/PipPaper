@@ -240,6 +240,91 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             ctx.fillStyle = "#10b981";
             ctx.fillText(`TP: ${d.profitTarget}`, w - padding.right + 5, ptY + 3);
         }
+
+        // Find closest candle indices for Entry and Exit
+        let closestEntryIndex = -1;
+        let minEntryDiff = Infinity;
+        let closestExitIndex = -1;
+        let minExitDiff = Infinity;
+        
+        // Approximate interval in seconds
+        let intervalSec = 60; // 1m
+        if (d.interval === "5m") intervalSec = 300;
+        if (d.interval === "15m") intervalSec = 900;
+        if (d.interval === "1h") intervalSec = 3600;
+        if (d.interval === "1d") intervalSec = 86400;
+
+        d.candles.forEach((c, i) => {
+            const entryDiff = Math.abs(c.t - d.entryTimestamp);
+            if (entryDiff < minEntryDiff) {
+                minEntryDiff = entryDiff;
+                closestEntryIndex = i;
+            }
+            const exitDiff = Math.abs(c.t - d.exitTimestamp);
+            if (exitDiff < minExitDiff) {
+                minExitDiff = exitDiff;
+                closestExitIndex = i;
+            }
+        });
+
+        // Determine validity
+        const entryValid = closestEntryIndex !== -1 && minEntryDiff <= intervalSec * 1.5;
+        const exitValid = closestExitIndex !== -1 && minExitDiff <= intervalSec * 1.5;
+
+        // Check for overlap
+        const isOverlap = entryValid && exitValid && closestEntryIndex === closestExitIndex;
+
+        // Draw Entry Marker
+        if (entryValid) {
+            const x = getX(closestEntryIndex);
+            
+            // Draw Vertical Dashed Line
+            ctx.beginPath();
+            ctx.setLineDash([2, 4]); // Sparse dash
+            ctx.strokeStyle = "rgba(59, 130, 246, 0.5)"; // Blue with opacity
+            ctx.lineWidth = 1;
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, h - padding.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw small triangle marker at bottom axis
+            // Shift left if overlapping
+            const markerX = isOverlap ? x - 5 : x;
+
+            ctx.fillStyle = "#3b82f6";
+            ctx.beginPath();
+            ctx.moveTo(markerX, h - padding.bottom);
+            ctx.lineTo(markerX - 4, h - padding.bottom + 6);
+            ctx.lineTo(markerX + 4, h - padding.bottom + 6);
+            ctx.fill();
+        }
+
+        // Draw Exit Marker
+        if (exitValid) {
+            const x = getX(closestExitIndex);
+            
+            // Draw Vertical Dashed Line
+            ctx.beginPath();
+            ctx.setLineDash([2, 4]); // Sparse dash
+            ctx.strokeStyle = "rgba(139, 92, 246, 0.5)"; // Purple with opacity
+            ctx.lineWidth = 1;
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, h - padding.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw small triangle marker at bottom axis
+            // Shift right if overlapping
+            const markerX = isOverlap ? x + 5 : x;
+
+            ctx.fillStyle = "#8b5cf6";
+            ctx.beginPath();
+            ctx.moveTo(markerX, h - padding.bottom);
+            ctx.lineTo(markerX - 4, h - padding.bottom + 6);
+            ctx.lineTo(markerX + 4, h - padding.bottom + 6);
+            ctx.fill();
+        }
     };
 
     return (

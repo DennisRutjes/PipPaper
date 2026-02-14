@@ -4,6 +4,7 @@ interface Props {
     tradeId: string;
     existingAdvice?: string | null;
     aiRating?: number | null;
+    aiGrade?: string | null;
     aiProvider?: string | null;
     aiTimestamp?: number | null;
 }
@@ -30,10 +31,26 @@ function StarRating({ rating }: { rating: number }) {
     );
 }
 
-export default function AICoachButton({ tradeId, existingAdvice, aiRating, aiProvider, aiTimestamp }: Props) {
+function GradeBadge({ grade }: { grade: string }) {
+    let colorClass = "bg-gray-500/20 text-gray-400 border-gray-500/30";
+    if (grade.startsWith("A")) colorClass = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+    else if (grade.startsWith("B")) colorClass = "bg-blue-500/20 text-blue-400 border-blue-500/30";
+    else if (grade.startsWith("C")) colorClass = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    else if (grade.startsWith("D")) colorClass = "bg-orange-500/20 text-orange-400 border-orange-500/30";
+    else if (grade.startsWith("F")) colorClass = "bg-red-500/20 text-red-400 border-red-500/30";
+
+    return (
+        <span class={`text-xs font-bold px-2 py-0.5 rounded border ${colorClass}`}>
+            {grade}
+        </span>
+    );
+}
+
+export default function AICoachButton({ tradeId, existingAdvice, aiRating, aiGrade, aiProvider, aiTimestamp }: Props) {
     const [loading, setLoading] = useState(false);
     const [advice, setAdvice] = useState(existingAdvice || "");
     const [rating, setRating] = useState(aiRating || 0);
+    const [grade, setGrade] = useState(aiGrade || "");
     const [provider, setProvider] = useState(aiProvider || "");
     const [timestamp, setTimestamp] = useState(aiTimestamp || 0);
     const [error, setError] = useState("");
@@ -53,6 +70,7 @@ export default function AICoachButton({ tradeId, existingAdvice, aiRating, aiPro
 
             setAdvice(data.advice);
             setRating(data.rating || 0);
+            setGrade(data.grade || "");
             setProvider(`${data.provider}/${data.model}`);
             setTimestamp(Date.now() / 1000);
         } catch (err: unknown) {
@@ -74,6 +92,7 @@ export default function AICoachButton({ tradeId, existingAdvice, aiRating, aiPro
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="text-sm font-semibold text-violet-300">AI Trade Coach</h3>
+                            {grade && <GradeBadge grade={grade} />}
                             {rating > 0 && <StarRating rating={rating} />}
                         </div>
                         {provider && timestamp > 0 && (

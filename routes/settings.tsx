@@ -20,6 +20,7 @@ interface SettingsData {
     settings?: Record<string, string>;
     symbolMappings?: Record<string, string>;
     aiModels?: AIModel[];
+    currentModel?: string;
 }
 
 const TAG_COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
@@ -43,16 +44,25 @@ export const handler: Handlers<SettingsData> = {
                         aiModels = data.models
                             .filter((m: any) => {
                                 const n = m.name.toLowerCase();
-                                return (n.includes("gemini-1.5-pro") || n.includes("gemini-1.5-flash") || n.includes("gemini-1.0-pro") || n.includes("gemini-pro")) 
-                                    && !n.includes("vision") // Exclude vision-only if any
-                                    && m.supportedGenerationMethods?.includes("generateContent");
+                                return (n.includes("gemini") && m.supportedGenerationMethods?.includes("generateContent") && !n.includes("vision"));
                             })
                             .map((m: any) => ({
                                 name: m.name.replace("models/", ""),
                                 displayName: m.displayName || m.name.replace("models/", ""),
                                 description: m.description
                             }))
-                            .sort((a: AIModel, b: AIModel) => b.name.localeCompare(a.name));
+                            .sort((a: AIModel, b: AIModel) => {
+                                // Extract version numbers (e.g. gemini-1.5-pro -> 1.5)
+                                const getVer = (name: string) => {
+                                    const match = name.match(/gemini-(\d+(\.\d+)?)/);
+                                    return match ? parseFloat(match[1]) : 0;
+                                };
+                                const aVer = getVer(a.name);
+                                const bVer = getVer(b.name);
+                                
+                                if (aVer !== bVer) return bVer - aVer; // Descending version
+                                return b.name.localeCompare(a.name);
+                            });
                     }
                 }
             } catch (e) {
@@ -63,13 +73,29 @@ export const handler: Handlers<SettingsData> = {
         // Fallback if fetch fails
         if (aiModels.length === 0) {
             aiModels = [
+                { name: "gemini-2.0-flash", displayName: "Gemini 2.0 Flash", description: "Latest fast model" },
                 { name: "gemini-1.5-pro", displayName: "Gemini 1.5 Pro", description: "Flagship model" },
                 { name: "gemini-1.5-flash", displayName: "Gemini 1.5 Flash", description: "Fast and cost-effective" },
                 { name: "gemini-1.0-pro", displayName: "Gemini 1.0 Pro", description: "Standard model" }
             ];
         }
 
-        return ctx.render({ tags, activeTab, settings, aiModels });
+        // Ensure env model is in the list
+        const envModel = Deno.env.get("AI_MODEL");
+        if (envModel && !aiModels.find(m => m.name === envModel)) {
+            aiModels.unshift({ name: envModel, displayName: envModel, description: "From .env configuration" });
+        }
+
+        // Determine current model preference
+        let currentModel = settings?.ai_model || envModel;
+        
+        // If no preference is set, find the best default (prefer highest version)
+        if (!currentModel && aiModels.length > 0) {
+             // Sort already puts highest versions first
+             currentModel = aiModels[0].name;
+        }
+
+        return ctx.render({ tags, activeTab, settings, aiModels, currentModel });
     },
     async POST(req, ctx) {
         const form = await req.formData();
@@ -149,16 +175,25 @@ export const handler: Handlers<SettingsData> = {
                         aiModels = data.models
                             .filter((m: any) => {
                                 const n = m.name.toLowerCase();
-                                return (n.includes("gemini-1.5-pro") || n.includes("gemini-1.5-flash") || n.includes("gemini-1.0-pro") || n.includes("gemini-pro")) 
-                                    && !n.includes("vision") // Exclude vision-only if any
-                                    && m.supportedGenerationMethods?.includes("generateContent");
+                                return (n.includes("gemini") && m.supportedGenerationMethods?.includes("generateContent") && !n.includes("vision"));
                             })
                             .map((m: any) => ({
                                 name: m.name.replace("models/", ""),
                                 displayName: m.displayName || m.name.replace("models/", ""),
                                 description: m.description
                             }))
-                            .sort((a: AIModel, b: AIModel) => b.name.localeCompare(a.name));
+                            .sort((a: AIModel, b: AIModel) => {
+                                // Extract version numbers (e.g. gemini-1.5-pro -> 1.5)
+                                const getVer = (name: string) => {
+                                    const match = name.match(/gemini-(\d+(\.\d+)?)/);
+                                    return match ? parseFloat(match[1]) : 0;
+                                };
+                                const aVer = getVer(a.name);
+                                const bVer = getVer(b.name);
+                                
+                                if (aVer !== bVer) return bVer - aVer; // Descending version
+                                return b.name.localeCompare(a.name);
+                            });
                     }
                 }
             } catch (e) {
@@ -168,10 +203,21 @@ export const handler: Handlers<SettingsData> = {
         
         if (aiModels.length === 0) {
             aiModels = [
+                { name: "gemini-2.0-flash", displayName: "Gemini 2.0 Flash", description: "Latest fast model" },
                 { name: "gemini-1.5-pro", displayName: "Gemini 1.5 Pro", description: "Flagship model" },
                 { name: "gemini-1.5-flash", displayName: "Gemini 1.5 Flash", description: "Fast and cost-effective" },
                 { name: "gemini-1.0-pro", displayName: "Gemini 1.0 Pro", description: "Standard model" }
             ];
+        }
+
+        const envModel = Deno.env.get("AI_MODEL");
+        if (envModel && !aiModels.find(m => m.name === envModel)) {
+            aiModels.unshift({ name: envModel, displayName: envModel, description: "From .env configuration" });
+        }
+
+        let currentModel = settings?.ai_model || envModel;
+        if (!currentModel && aiModels.length > 0) {
+             currentModel = aiModels[0].name;
         }
 
         if (action === "import_backup") {
@@ -206,7 +252,7 @@ export const handler: Handlers<SettingsData> = {
 
                     const exportData = JSON.parse(jsonStr);
                     if (!exportData.app || exportData.app !== "PipPaper") {
-                        return ctx.render({ tags, activeTab: "general", importError: "Invalid PipPaper export file", settings, aiModels });
+                        return ctx.render({ tags, activeTab: "general", importError: "Invalid PipPaper export file", settings, aiModels, currentModel });
                     }
 
                     const { trades, notes, setups: importedSetups, tags: importedTags } = exportData.data;
@@ -219,19 +265,19 @@ export const handler: Handlers<SettingsData> = {
                     // Refresh tags after import
                     const newTags = await storage.getTags();
                     const newMappings = await storage.getSymbolMappings();
-                    return ctx.render({ tags: newTags, activeTab: "general", importResult: counts, settings, aiModels, symbolMappings: newMappings });
+                    return ctx.render({ tags: newTags, activeTab: "general", importResult: counts, settings, aiModels, symbolMappings: newMappings, currentModel });
                 } catch (e) {
-                    return ctx.render({ tags, activeTab: "general", importError: (e as Error).message, settings, aiModels, symbolMappings });
+                    return ctx.render({ tags, activeTab: "general", importError: (e as Error).message, settings, aiModels, symbolMappings, currentModel });
                 }
             }
         }
 
-        return ctx.render({ tags, saved, deleted, activeTab, settings, aiModels, symbolMappings });
+        return ctx.render({ tags, saved, deleted, activeTab, settings, aiModels, symbolMappings, currentModel });
     },
 };
 
 export default function SettingsPage(props: PageProps<SettingsData>) {
-    const { tags, saved, deleted, activeTab, importResult, importError, settings, aiModels, symbolMappings } = props.data;
+    const { tags, saved, deleted, activeTab, importResult, importError, settings, aiModels, symbolMappings, currentModel } = props.data;
 
     const mistakeTags = tags.filter(t => t.Category === "mistake");
     const setupTags = tags.filter(t => t.Category === "setup");
@@ -437,7 +483,7 @@ export default function SettingsPage(props: PageProps<SettingsData>) {
                                         <div class="flex gap-2">
                                             <select name="ai_model" class="flex-1 bg-[#1a1d2e] border border-[#2d3348] text-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
                                                 {modelsList.map(model => (
-                                                    <option key={model.name} value={model.name} selected={settings?.ai_model === model.name || model.name === "gemini-1.5-pro"}>
+                                                    <option key={model.name} value={model.name} selected={currentModel === model.name}>
                                                         {model.displayName}
                                                     </option>
                                                 ))}

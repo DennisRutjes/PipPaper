@@ -26,6 +26,32 @@ const DEFAULT_MULTIPLIERS: Record<string, number> = {
     "6A": 100000,
 };
 
+const DEFAULT_TICK_SIZES: Record<string, number> = {
+    "NQ": 0.25,
+    "MNQ": 0.25,
+    "ES": 0.25,
+    "MES": 0.25,
+    "YM": 1,
+    "MYM": 1,
+    "RTY": 0.1,
+    "M2K": 0.1,
+    "CL": 0.01,
+    "MCL": 0.01,
+    "GC": 0.1,
+    "MGC": 0.1,
+    "SI": 0.005,
+    "HG": 0.0005,
+    "NG": 0.001,
+    "ZB": 0.03125, // 1/32
+    "ZN": 0.015625, // 1/64 (approx, often displayed as decimals or fractions)
+    "ZF": 0.0078125, // 1/128
+    "ZT": 0.00390625, // 1/256
+    "6E": 0.00005,
+    "6J": 0.000001,
+    "6B": 0.0001,
+    "6A": 0.0001,
+};
+
 const DEFAULT_MAPPINGS: Record<string, string> = {
     "ES": "ES=F",
     "NQ": "NQ=F",
@@ -75,6 +101,18 @@ export async function getSymbolMultiplier(symbol: string): Promise<number> {
 
     // 5. Default
     return 1;
+}
+
+export function getTickSize(symbol: string): number {
+    // 1. Exact
+    if (DEFAULT_TICK_SIZES[symbol]) return DEFAULT_TICK_SIZES[symbol];
+    
+    // 2. Strip futures
+    const base = symbol.replace(/[FGHJKMNQUVXZ]\d{1,2}$/i, "");
+    if (DEFAULT_TICK_SIZES[base]) return DEFAULT_TICK_SIZES[base];
+    
+    // 3. Default
+    return 0.01;
 }
 
 export async function getSymbolMapping(symbol: string): Promise<string> {
