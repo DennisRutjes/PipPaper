@@ -254,16 +254,24 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                                             <label class="block text-xs font-medium text-gray-500 mb-2">Setups (from Playbook)</label>
                                             {setups.length > 0 ? (
                                                 <div class="flex flex-wrap gap-2">
-                                                    {setups.map(s => (
-                                                        <label key={s.SetupID} class="flex items-center gap-2 cursor-pointer">
-                                                            <input type="checkbox" name="setupIds" value={s.SetupID}
-                                                                checked={trade.SetupIDs?.includes(s.SetupID || 0)}
-                                                                class="rounded border-[#2d3348] bg-[#1a1d2e] text-emerald-500" />
-                                                            <span class="text-xs px-2 py-1 rounded-full font-medium" style={`background: ${s.Color}20; color: ${s.Color}; border: 1px solid ${s.Color}40;`}>
-                                                                {s.Name}
-                                                            </span>
-                                                        </label>
-                                                    ))}
+                                                    {setups.map(s => {
+                                                        const isSelected = trade.SetupIDs?.includes(s.SetupID || 0);
+                                                        return (
+                                                            <label key={s.SetupID} class="cursor-pointer">
+                                                                <input type="checkbox" name="setupIds" value={s.SetupID}
+                                                                    checked={isSelected}
+                                                                    class="hidden peer" />
+                                                                <span class={`text-xs px-3 py-1.5 rounded-full font-medium border transition-all select-none
+                                                                    ${isSelected 
+                                                                        ? '' // Active styles applied via inline style for dynamic color
+                                                                        : 'bg-[#1a1d2e] border-[#2d3348] text-gray-400 hover:border-gray-600'
+                                                                    }`}
+                                                                    style={isSelected ? `background: ${s.Color}20; color: ${s.Color}; border-color: ${s.Color}50;` : ''}>
+                                                                    {s.Name}
+                                                                </span>
+                                                            </label>
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <div class="text-xs text-gray-600">
@@ -283,8 +291,12 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                                                                 <input type="checkbox" name="mistakeTags" value={tag.Name}
                                                                     checked={isSelected}
                                                                     class="hidden peer" />
-                                                                <span class={`text-xs px-2.5 py-1 rounded-full font-medium border transition-all peer-checked:ring-1 peer-checked:ring-offset-1 peer-checked:ring-offset-[#141622]`}
-                                                                    style={`background: ${isSelected ? tag.Color + '30' : tag.Color + '10'}; color: ${tag.Color}; border-color: ${tag.Color}40; ${isSelected ? `ring-color: ${tag.Color}` : ''}`}>
+                                                                <span class={`text-xs px-3 py-1.5 rounded-full font-medium border transition-all select-none
+                                                                    ${isSelected 
+                                                                        ? '' 
+                                                                        : 'bg-[#1a1d2e] border-[#2d3348] text-gray-400 hover:border-gray-600'
+                                                                    }`}
+                                                                    style={isSelected ? `background: ${tag.Color}20; color: ${tag.Color}; border-color: ${tag.Color}50;` : ''}>
                                                                     {tag.Name}
                                                                 </span>
                                                             </label>
