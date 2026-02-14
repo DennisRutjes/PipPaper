@@ -1,3 +1,4 @@
+import MultiSelect from "../../islands/MultiSelect.tsx";
 import { Handlers, PageProps } from "$fresh/server.ts";
 import SideMenu from "../../islands/SideMenu.tsx";
 import RichEditor from "../../islands/RichEditor.tsx";
@@ -92,13 +93,29 @@ export const handler: Handlers<TradeDetailData> = {
         const tradeNote = await storage.getTradeNote(tradeID);
         const updatedTrade = await storage.getTrade(tradeID);
 
-        return ctx.render({ trade: updatedTrade, setups, tags, tradeNote, notesSaved, setupsSaved });
+        if (!updatedTrade) return ctx.renderNotFound();
+        const multiplier = await getSymbolMultiplier(updatedTrade.Symbol || "");
+
+        return ctx.render({ trade: updatedTrade, setups, tags, note: tradeNote, multiplier, notesSaved, setupsSaved });
     },
 };
 
 export default function TradeDetail(props: PageProps<TradeDetailData>) {
     const { trade, setups, tags, tradeNote, notesSaved, setupsSaved, multiplier } = props.data;
     const mistakeTags = tags.filter(t => t.Category === "mistake");
+    
+    const setupOptions = setups.map(s => ({
+        value: s.SetupID || 0,
+        label: s.Name,
+        color: s.Color
+    }));
+    
+    const mistakeOptions = mistakeTags.map(t => ({
+        value: t.Name,
+        label: t.Name,
+        color: t.Color
+    }));
+
     if (!trade) return <div class="text-white p-8">Trade not found</div>;
 
     const pnl = trade.PnL || 0;
@@ -253,26 +270,12 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                                         <div>
                                             <label class="block text-xs font-medium text-gray-500 mb-2">Setups (from Playbook)</label>
                                             {setups.length > 0 ? (
-                                                <div class="flex flex-wrap gap-2">
-                                                    {setups.map(s => {
-                                                        const isSelected = trade.SetupIDs?.includes(s.SetupID || 0);
-                                                        return (
-                                                            <label key={s.SetupID} class="cursor-pointer">
-                                                                <input type="checkbox" name="setupIds" value={s.SetupID}
-                                                                    checked={isSelected}
-                                                                    class="hidden peer" />
-                                                                <span class={`text-xs px-3 py-1.5 rounded-full font-medium border transition-all select-none
-                                                                    ${isSelected 
-                                                                        ? '' // Active styles applied via inline style for dynamic color
-                                                                        : 'bg-[#1a1d2e] border-[#2d3348] text-gray-400 hover:border-gray-600'
-                                                                    }`}
-                                                                    style={isSelected ? `background: ${s.Color}20; color: ${s.Color}; border-color: ${s.Color}50;` : ''}>
-                                                                    {s.Name}
-                                                                </span>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
+                                                <MultiSelect 
+                                                    options={setupOptions}
+                                                    selected={trade.SetupIDs || []}
+                                                    name="setupIds"
+                                                    placeholder="Select setups..."
+                                                />
                                             ) : (
                                                 <div class="text-xs text-gray-600">
                                                     <a href="/playbook" class="text-emerald-400 hover:underline">Create setups in your Playbook</a> to tag trades.
@@ -283,25 +286,13 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                                         <div>
                                             <label class="block text-xs font-medium text-gray-500 mb-2">Mistakes</label>
                                             {mistakeTags.length > 0 && (
-                                                <div class="flex flex-wrap gap-2 mb-2">
-                                                    {mistakeTags.map(tag => {
-                                                        const isSelected = trade.Mistakes?.includes(tag.Name);
-                                                        return (
-                                                            <label key={tag.TagID} class="cursor-pointer">
-                                                                <input type="checkbox" name="mistakeTags" value={tag.Name}
-                                                                    checked={isSelected}
-                                                                    class="hidden peer" />
-                                                                <span class={`text-xs px-3 py-1.5 rounded-full font-medium border transition-all select-none
-                                                                    ${isSelected 
-                                                                        ? '' 
-                                                                        : 'bg-[#1a1d2e] border-[#2d3348] text-gray-400 hover:border-gray-600'
-                                                                    }`}
-                                                                    style={isSelected ? `background: ${tag.Color}20; color: ${tag.Color}; border-color: ${tag.Color}50;` : ''}>
-                                                                    {tag.Name}
-                                                                </span>
-                                                            </label>
-                                                        );
-                                                    })}
+                                                <div class="mb-2">
+                                                    <MultiSelect 
+                                                        options={mistakeOptions}
+                                                        selected={trade.Mistakes?.filter(m => mistakeTags.some(t => t.Name === m)) || []}
+                                                        name="mistakeTags"
+                                                        placeholder="Select mistakes..."
+                                                    />
                                                 </div>
                                             )}
                                             <input name="mistakes" type="text" value={trade.Mistakes?.filter(m => !mistakeTags.some(t => t.Name === m)).join(", ") || ""} placeholder="Additional mistakes (comma-separated)"
