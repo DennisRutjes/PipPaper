@@ -58,7 +58,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
 
             <table className="min-w-full divide-y divide-gray-200 border-collapse">
                 <thead className="bg-gray-50">
-                <tr className="" align="top">
+                <tr className="">
                     <th scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
@@ -124,7 +124,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 ">
                 {props.trades.map((trade: Trade) => (
-                    <tr key={trade.TradeID} onclick={() => handleClick(trade.TradeID)}
+                    <tr key={trade.TradeID} onClick={() => handleClick(trade.TradeID.toString())}
                         className="cursor-pointer hover:bg-gray-100 active:bg-red-200">
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center flex-shrink-0">
@@ -201,7 +201,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
-                                    {dateInterval(new Date(trade.ExitTimestamp), new Date(trade.EntryTimestamp))}
+                                    {dateInterval(new Date(trade.ExitTimestamp * 1000), new Date(trade.EntryTimestamp * 1000))}
                                 </div>
                             </div>
                         </td>

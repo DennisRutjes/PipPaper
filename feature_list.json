@@ -132,7 +132,7 @@
       "Click 'Evaluate Trade'",
       "Verify AI response is displayed"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 12,
@@ -144,7 +144,7 @@
       "Click 'Evaluate Trade'",
       "Verify error message prompts user to configure key"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 13,
@@ -156,7 +156,7 @@
       "Trigger evaluation",
       "Verify backend attempts to call Anthropic API (mock or log check)"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 14,
