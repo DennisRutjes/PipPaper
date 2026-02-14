@@ -1,99 +1,59 @@
 # PipPaper
 
-### Elevating Trade Management and Journaling
+### The Open Source TradeZella Alternative
 
-Welcome to PipPaper, the platform that takes trade management and journaling to
-a new level of professionalism and organization.
+PipPaper is a comprehensive trade journaling and analysis platform designed to replicate the core functionality of premium tools like TradeZella, but open source and self-hosted.
 
-Designed with the serious trader in mind, PipPaper provides a comprehensive
-solution for meticulously documenting and analyzing your trading activities.
+## Key Features
 
-PipPaper will be a standalone app free to use for every serious trader, just
-import your trading csv en get insights into your trading behaviour
+- **📊 Advanced Dashboard**: Visualize your P&L, Win Rate, and Equity Curve.
+- **📝 Trade Journaling**: Detailed trade logs with execution tracking.
+- **🤖 AI Trade Coach**: Get instant feedback on your trades using Google Gemini or Anthropic Claude.
+- **📥 Tradovate Import**: Seamlessly import your trade history from Tradovate CSVs.
+- **🔒 Privacy Focused**: Your data stays local. API keys are stored in your local environment.
 
-The rationale behind this project is that the current SAAS solutions are pretty
-expensive, so I thought why not build a standalone version.
+## Getting Started
 
-The stack will be quite simple
+### Prerequisites
+- [Deno](https://deno.land/) (v1.40+)
 
-# Fresh project
+### Installation
 
-Your new Fresh project is ready to go. You can follow the Fresh "Getting
-Started" guide here: https://fresh.deno.dev/docs/getting-started
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/DennisRutjes/PipPaper.git
+   cd PipPaper
+   ```
 
-### Usage
+2. Run the initialization script:
+   ```bash
+   ./init.sh
+   ```
+   This will check your environment, create a `.env` file from the example, and start the development server.
 
-Make sure to install Deno: https://deno.land/manual/getting_started/installation
+3. Configure your AI Coach:
+   Open `.env` and add your API key:
+   ```env
+   GEMINI_API_KEY=your_key_here
+   ```
 
-Then start the project:
+4. Open your browser at `http://localhost:8000`
 
-```
-deno task start
-```
+## Tech Stack
 
-This will watch the project directory and restart as necessary.
+- **Runtime**: Deno
+- **Framework**: Fresh
+- **Styling**: Tailwind CSS
+- **Database**: Deno KV
 
-if you want to buy me a beer:
+## Roadmap
 
-![](./images/btc.png)
+- [ ] Dashboard (P&L, Win Rate)
+- [ ] Trade Log & Filtering
+- [ ] Trade Detail View
+- [ ] Tradovate CSV Import
+- [ ] AI Coach Integration (Gemini/Claude)
 
-segwit: bc1q3lxkq3pmtqm2uyf63wqcg0354mpcrw63wxy2fz
+## License
 
-# Current Status
-
-[TODO(NE)](TODO.md)
-
-## Backend
-* Importing broker data
-* database service
-
-## Frontend
-
-TRADE DETAIL: MVP IN PROGRESS
-
-![](./images/trade_detail.png)
-
-TRADE LOG: first Iteration finished
-
-![](./images/current.png)
-
-work in progress but here are some ideas where it should be heading in the
-future!
-
-If you have designs and nice functional additions just add them in the issues
-section
-
-# Future Design
-
-## Dashboard
-
-![](./images/dashboard.png)
-
-![](./images/dashboard2.png)
-
-## Daily Stats
-
-![](./images/daily-stats.png)
-
-## Trade
-
-![](./images/trade.png)
-
-## Trade log
-
-![](./images/trade-log.png)
-
-
-
-
-# utils
-
-add prisma to project
-
-deno run -A npm:prisma init
-
-deno run -A npm:prisma db push
-
-deno run -A npm:prisma generate --data-proxy
-
-removed prisma experiment, vanilla db access and mapping more tedious, but it is working ¯\_(ツ)_/¯
+MIT
