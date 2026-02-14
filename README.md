@@ -2,6 +2,7 @@
 
 ![PipPaper Infographic](images/infographic.png)
 
+## AI Coach Analysis
 ![AI Coach Analysis](images/ai_coach_chart.png)
 
 ### The Open Source TradeZella Alternative
