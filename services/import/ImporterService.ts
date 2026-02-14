@@ -10,16 +10,16 @@ export class ImporterService {
         this.store = store;
     }
 
-    async importTradovateTrades(content: string): Promise<number> {
+    async importTradovateTrades(content: string): Promise<string[]> {
         const importer = new TradovateImporter(""); // Path not needed for content import
         const trades = await importer.parseTrades(content);
         
-        let count = 0;
+        const importedIds: string[] = [];
         for (const trade of trades) {
             await this.store.saveTrade(trade);
-            count++;
+            importedIds.push(trade.BrokerTradeID);
         }
-        return count;
+        return importedIds;
     }
 
 

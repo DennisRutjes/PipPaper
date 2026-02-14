@@ -1,9 +1,12 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Importer } from "../services/import/ImporterService.ts";
 import SideMenu from "../islands/SideMenu.tsx";
+import Toast from "../islands/Toast.tsx";
+import ImportProcessor from "../islands/ImportProcessor.tsx";
 
 interface ImportData {
     count?: number;
+    importedIds?: string[];
     error?: string;
 }
 
@@ -21,9 +24,9 @@ export const handler: Handlers<ImportData> = {
             }
 
             const content = await file.text();
-            const count = await Importer.importTradovateTrades(content);
+            const importedIds = await Importer.importTradovateTrades(content);
 
-            return ctx.render({ count });
+            return ctx.render({ count: importedIds.length, importedIds });
         } catch (e) {
             return ctx.render({ error: (e as Error).message });
         }
@@ -31,12 +34,17 @@ export const handler: Handlers<ImportData> = {
 };
 
 export default function ImportPage(props: PageProps<ImportData>) {
-    const { count, error } = props.data;
+    const { count, importedIds, error } = props.data;
 
     return (
         <>
             <SideMenu active={"Import Trades"} />
             <div class="sm:ml-[240px] min-h-screen bg-[#0f1117] p-4 sm:p-6">
+                <Toast 
+                    initialMessage={count !== undefined ? `Imported ${count} trades. Starting processing...` : error} 
+                    initialType={count !== undefined ? "info" : error ? "error" : undefined} 
+                />
+                
                 <div class="max-w-3xl mx-auto">
                     {/* Header */}
                     <div class="mb-8">
@@ -44,30 +52,9 @@ export default function ImportPage(props: PageProps<ImportData>) {
                         <p class="text-sm text-gray-500 mt-1">Upload your broker exports to start tracking</p>
                     </div>
 
-                    {/* Success Message */}
-                    {count !== undefined && (
-                        <div class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 flex items-center gap-3">
-                            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                            <div>
-                                <div class="font-medium">Import Successful!</div>
-                                <div class="text-sm text-emerald-400/70">Successfully imported {count} trades. <a href="/" class="underline hover:text-emerald-300">View Dashboard</a></div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Error Message */}
-                    {error && (
-                        <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3">
-                            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                            <div>
-                                <div class="font-medium">Import Failed</div>
-                                <div class="text-sm text-red-400/70">{error}</div>
-                            </div>
-                        </div>
+                    {/* Progress Processor */}
+                    {importedIds && importedIds.length > 0 && (
+                        <ImportProcessor importedIds={importedIds} />
                     )}
 
                     {/* Upload Card */}
