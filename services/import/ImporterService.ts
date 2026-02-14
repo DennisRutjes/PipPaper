@@ -16,8 +16,12 @@ export class ImporterService {
         
         const importedIds: string[] = [];
         for (const trade of trades) {
-            await this.store.saveTrade(trade);
-            importedIds.push(trade.BrokerTradeID);
+            // Check if trade already exists to prevent overwriting manual data (notes, tags, etc.)
+            const existing = await this.store.getTrade(trade.BrokerTradeID);
+            if (!existing) {
+                await this.store.saveTrade(trade);
+                importedIds.push(trade.BrokerTradeID);
+            }
         }
         return importedIds;
     }
