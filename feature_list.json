@@ -1,0 +1,186 @@
+[
+  {
+    "id": 1,
+    "category": "setup",
+    "priority": "high",
+    "description": "Project structure includes .env handling and gitignore",
+    "steps": [
+      "Check .gitignore for .env",
+      "Create .env.example with template variables",
+      "Verify .env is not tracked by git"
+    ],
+    "passes": true
+  },
+  {
+    "id": 2,
+    "category": "import",
+    "priority": "high",
+    "description": "User can upload a Tradovate CSV file",
+    "steps": [
+      "Navigate to Import page",
+      "Select Tradovate CSV file",
+      "Upload file",
+      "Verify success message"
+    ],
+    "passes": true
+  },
+  {
+    "id": 3,
+    "category": "import",
+    "priority": "high",
+    "description": "System parses Tradovate CSV correctly",
+    "steps": [
+      "Upload sample Tradovate CSV",
+      "Check database for parsed trades",
+      "Verify entry price, exit price, time, and P&L match CSV"
+    ],
+    "passes": true
+  },
+  {
+    "id": 4,
+    "category": "dashboard",
+    "priority": "high",
+    "description": "Dashboard shows correct Total P&L",
+    "steps": [
+      "Import trades with known P&L",
+      "Navigate to Dashboard",
+      "Verify Total P&L matches sum of trades"
+    ],
+    "passes": true
+  },
+  {
+    "id": 5,
+    "category": "dashboard",
+    "priority": "high",
+    "description": "Dashboard shows correct Win Rate",
+    "steps": [
+      "Import mix of winning and losing trades",
+      "Navigate to Dashboard",
+      "Verify Win Rate percentage is correct"
+    ],
+    "passes": true
+  },
+  {
+    "id": 6,
+    "category": "dashboard",
+    "priority": "medium",
+    "description": "Dashboard displays Equity Curve chart",
+    "steps": [
+      "Navigate to Dashboard",
+      "Verify Equity Curve chart is rendered",
+      "Check if chart trend matches trade history"
+    ],
+    "passes": true
+  },
+  {
+    "id": 7,
+    "category": "tradelog",
+    "priority": "high",
+    "description": "Trade Log displays list of trades",
+    "steps": [
+      "Navigate to Trade Log",
+      "Verify table shows imported trades",
+      "Check columns: Date, Symbol, Side, P&L"
+    ],
+    "passes": true
+  },
+  {
+    "id": 8,
+    "category": "tradelog",
+    "priority": "medium",
+    "description": "User can filter trades by Symbol",
+    "steps": [
+      "Navigate to Trade Log",
+      "Select a specific symbol in filter",
+      "Verify only trades for that symbol are shown"
+    ],
+    "passes": true
+  },
+  {
+    "id": 9,
+    "category": "tradedetail",
+    "priority": "high",
+    "description": "User can view Trade Details",
+    "steps": [
+      "Click on a trade in Trade Log",
+      "Verify navigation to Trade Detail page",
+      "Check all trade execution details are visible"
+    ],
+    "passes": true
+  },
+  {
+    "id": 10,
+    "category": "tradedetail",
+    "priority": "medium",
+    "description": "User can add notes to a trade",
+    "steps": [
+      "Open Trade Detail page",
+      "Type text in Notes field",
+      "Save",
+      "Reload page and verify notes persist"
+    ],
+    "passes": true
+  },
+  {
+    "id": 11,
+    "category": "ai_coach",
+    "priority": "high",
+    "description": "AI Coach evaluates trade using Gemini",
+    "steps": [
+      "Configure valid Gemini API Key in .env",
+      "Open Trade Detail page",
+      "Click 'Evaluate Trade'",
+      "Verify AI response is displayed"
+    ],
+    "passes": true
+  },
+  {
+    "id": 12,
+    "category": "ai_coach",
+    "priority": "medium",
+    "description": "AI Coach handles missing API Key gracefully",
+    "steps": [
+      "Remove API Key from .env",
+      "Click 'Evaluate Trade'",
+      "Verify error message prompts user to configure key"
+    ],
+    "passes": true
+  },
+  {
+    "id": 13,
+    "category": "ai_coach",
+    "priority": "medium",
+    "description": "Switch between Gemini and Claude providers",
+    "steps": [
+      "Set LLM_PROVIDER to 'claude' in .env",
+      "Trigger evaluation",
+      "Verify backend attempts to call Anthropic API (mock or log check)"
+    ],
+    "passes": true
+  },
+  {
+    "id": 14,
+    "category": "settings",
+    "priority": "low",
+    "description": "User can manage custom tags",
+    "steps": [
+      "Navigate to Settings",
+      "Add new tag 'FOMO'",
+      "Go to Trade Detail",
+      "Verify 'FOMO' is available in tags dropdown"
+    ],
+    "passes": true
+  },
+  {
+    "id": 15,
+    "category": "style",
+    "priority": "medium",
+    "description": "App is responsive on mobile",
+    "steps": [
+      "Resize browser to mobile width",
+      "Check Dashboard layout stacks correctly",
+      "Check Trade Log table is scrollable or adapted"
+    ],
+    "passes": true
+  }
+]

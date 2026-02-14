@@ -2,13 +2,12 @@ import {Importer} from "../Importer.ts";
 import {readCSVObjects} from "https://deno.land/x/csv@v0.7.2/reader.ts";
 import {asyncArrayFrom} from "https://deno.land/x/csv@v0.7.2/utils.ts";
 
+import {Buffer} from "https://deno.land/std@0.199.0/io/buffer.ts";
 import {readLines} from "https://deno.land/std@0.199.0/io/mod.ts";
 import {Trade} from "../../storage/entities/Trade.ts";
 import * as dt from "https://deno.land/std@0.200.0/datetime/mod.ts";
 import {Cost} from "../../storage/entities/Cost.ts";
 
-import {readCSV} from "https://deno.land/x/csv/mod.ts";
-import {deferred} from "https://deno.land/std@0.193.0/async/deferred.ts";
 
 type AnyDict = {
     [key: string]: any
@@ -31,14 +30,25 @@ interface TradeData {
 }
 
 
-async function importCsvFile(file: string) {
+const headerMapping: {[key: string]: string} = {
+    "Symbol": "symbol",
+    "Buy Fill Id": "buyFillId",
+    "Sell Fill Id": "sellFillId",
+    "Qty": "qty",
+    "PnL": "pnl",
+    "P&L": "pnl",
+    "Buy Price": "buyPrice",
+    "Bought Timestamp": "boughtTimestamp",
+    "Sell Price": "sellPrice",
+    "Sold Timestamp": "soldTimestamp"
+};
+
+async function importCsvFile(file: string): Promise<AnyDict[]> {
     const f = await Deno.open(file);
 
-    const objects: object[] = [];
+    const objects: AnyDict[] = [];
     for await (const csvObj of readCSVObjects(f)) {
-        const obj: {
-            [key: string]: string
-        } = {};
+        const obj: AnyDict = {};
 
         Object.keys(csvObj).forEach(key => {
             const normalizeKey = key.replaceAll(" ", "_").trim()
@@ -47,12 +57,29 @@ async function importCsvFile(file: string) {
 
         objects.push(obj)
     }
-
     f.close();
+    return objects;
+}
 
-    return new Promise<object[]>((resolve, reject) => {
-        resolve(objects);
-    })
+async function parseCsvContent(content: string): Promise<AnyDict[]> {
+    const buf = new Buffer(new TextEncoder().encode(content));
+
+    const objects: object[] = [];
+    for await (const csvObj of readCSVObjects(buf)) {
+        const obj: {
+            [key: string]: string
+        } = {};
+
+        Object.keys(csvObj).forEach(key => {
+            const trimmedKey = key.trim();
+            const mappedKey = headerMapping[trimmedKey] || trimmedKey.replaceAll(" ", "_");
+            obj[mappedKey] = csvObj[key].trim()
+        });
+
+        objects.push(obj)
+    }
+
+    return objects;
 }
 
 export class TradovateImporter implements Importer {
@@ -81,8 +108,15 @@ export class TradovateImporter implements Importer {
         return (await importCsvFile(this.importPath + "/" + file))
             //.map(logAnyDict)
             .map((anyDict: AnyDict) => mapPerformance2Trade(this.getBroker(), anyDict))
+            .filter((t: Trade | null) => t !== null) as Trade[]
     }
 
+    async parseTrades(content: string): Promise<Trade[]> {
+        return (await parseCsvContent(content))
+            //.map(logAnyDict)
+            .map((anyDict: AnyDict) => mapPerformance2Trade(this.getBroker(), anyDict))
+            .filter((t: Trade | null) => t !== null) as Trade[]
+    }
 }
 
 function mapCost(broker: string, {Contract, Timestamp, Cash_Change_Type, Delta, Currency}: AnyDict): Cost {
@@ -118,11 +152,17 @@ function logAnyDict(anyDict: AnyDict): AnyDict {
   },
 
  */
-function mapPerformance2Trade(broker: string, {
-    symbol, buyFillId, sellFillId, qty, pnl,
-    buyPrice, boughtTimestamp,
-    sellPrice, soldTimestamp
-}: AnyDict): Trade {
+function mapPerformance2Trade(broker: string, dict: AnyDict): Trade | null {
+    const {
+        symbol, buyFillId, sellFillId, qty, pnl,
+        buyPrice, boughtTimestamp,
+        sellPrice, soldTimestamp
+    } = dict;
+
+    if (!boughtTimestamp || !soldTimestamp) {
+        // console.warn("Missing timestamp for trade:", dict);
+        return null;
+    }
 
     const currencyValue: CurrencyValue = parseCurrencyValue(pnl);
 
@@ -159,8 +199,13 @@ interface CurrencyValue {
 }
 
 function parseCurrencyValue(str: string): CurrencyValue {
+    if (!str) return {currency: "?", value: 0.0};
+    
+    // Remove commas first
+    const cleanStr = str.replace(/,/g, "");
+    
     const regex = /^(\$)(\()?(.+?)(\))?$/;
-    const matches = str.match(regex);
+    const matches = cleanStr.match(regex);
 
     if (!matches) {
         return {currency: "?", value: 0.0};

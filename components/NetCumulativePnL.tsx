@@ -1,7 +1,5 @@
-import {Trade} from "../services/storage/entities/Trade.ts";
-
+import { Trade } from "../services/storage/entities/Trade.ts";
 import ChartIsland from "../islands/chart.tsx";
-import {transparentize} from "$fresh_charts/utils.ts";
 
 function integrateArray(arr: number[]): number[] {
     return arr.reduce((acc, val, index) => {
@@ -14,59 +12,60 @@ interface NetCumulativePnLProps {
     trades: Trade[];
 }
 
-export default function NetCumulativePnL({trades}: NetCumulativePnLProps) {
-
-    const cumulativeNetPnL = integrateArray(trades.map(t => t.PnL + t.AdjustedCost))
-    const tradeTimes = trades.map(t => new Date(t.ExitTimestamp * 1000).toDateString())
-
-    const totalPnL = trades.reduce((sum, trade) => sum + (trade.PnL + trade.AdjustedCost), 0);
+export default function NetCumulativePnL({ trades }: NetCumulativePnLProps) {
+    const cumulativeNetPnL = integrateArray(trades.map(t => (t.PnL || 0) + (t.AdjustedCost || 0)));
+    const tradeTimes = trades.map(t => {
+        const d = new Date(t.ExitTimestamp * 1000);
+        return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+    const totalPnL = trades.reduce((sum, trade) => sum + ((trade.PnL || 0) + (trade.AdjustedCost || 0)), 0);
 
     return (
-        <>
-            <ChartIsland
-                type="line"
-                options={{
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Net Cumulative P&L',
-                        }
+        <ChartIsland
+            type="line"
+            options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: "#9ca3af", font: { size: 11 }, boxWidth: 12 },
                     },
-                    scales :{
-                        x: {
-                            display: false // Hide X axis labels
-                        },
+                    title: { display: false },
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        ticks: { color: "#4b5563", font: { size: 10 }, maxTicksLimit: 8 },
+                        grid: { color: "rgba(30, 34, 53, 0.8)" },
                     },
-                    // scales: {
-                    //     x: {
-                    //         type: 'time',
-                    //         time: {
-                    //             unit: 'second'
-                    //         }
-                    //     }
-                    // },
-                    tension: 0.2,
-                    interaction: {mode: "index", intersect: false}
-                }}
-                data={{
-                    labels: tradeTimes,
-                    datasets: [
-                        {
-                            labels: tradeTimes,
-                            fill: {
-                                target: {value: 0},
-                                above: transparentize('rgb(0, 220, 0)', 0.5),   // Area will be red above the origin
-                                below: transparentize('rgb(200, 0, 0)', 0.5)    // And blue below the origin
-                            },
-                            label: `$ ${totalPnL.toFixed((2))} `,
-                            data: cumulativeNetPnL,
-                            backgroundColor: totalPnL > 0 ? transparentize('rgb(0, 220, 0)', 0.5) : transparentize('rgb(200, 0, 0)', 0.5),
-                            strokeColor: transparentize('rgb(100, 100, 100)', 0.5),
+                    y: {
+                        ticks: { color: "#4b5563", font: { size: 10 }, callback: (v: string | number) => `$${v}` },
+                        grid: { color: "rgba(30, 34, 53, 0.8)" },
+                    },
+                },
+                elements: {
+                    line: { tension: 0.3, borderWidth: 2 },
+                    point: { radius: 3, hoverRadius: 5, backgroundColor: totalPnL >= 0 ? "#10b981" : "#ef4444" },
+                },
+                interaction: { mode: "index", intersect: false },
+            }}
+            data={{
+                labels: tradeTimes,
+                datasets: [
+                    {
+                        fill: {
+                            target: { value: 0 },
+                            above: "rgba(16, 185, 129, 0.15)",
+                            below: "rgba(239, 68, 68, 0.15)",
                         },
-
-                    ],
-                }}
-            />
-        </>
+                        label: `Net P&L: $${totalPnL.toFixed(2)}`,
+                        data: cumulativeNetPnL,
+                        backgroundColor: totalPnL >= 0 ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                        borderColor: totalPnL >= 0 ? "#10b981" : "#ef4444",
+                    },
+                ],
+            }}
+        />
     );
 }

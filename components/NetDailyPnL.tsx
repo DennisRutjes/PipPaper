@@ -1,75 +1,62 @@
-import {Trade} from "../services/storage/entities/Trade.ts";
+import { Trade } from "../services/storage/entities/Trade.ts";
 import ChartIsland from "../islands/chart.tsx";
-import {transparentize} from "$fresh_charts/utils.ts";
 
-function calculateDailyPnL(trades: Trade[]): number[] {
-    let dailyPnL: { [key: string]: number } = {};
-
+function calculateDailyPnL(trades: Trade[]): { labels: string[]; values: number[] } {
+    const dailyPnL: Record<string, number> = {};
     for (const trade of trades) {
-        // Convert epoch seconds to a readable Date
         const date = new Date(trade.ExitTimestamp * 1000);
-        // Normalize to YYYY-MM-DD format
-        const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        // Increment the PnL for current date
-        dailyPnL[dateString] = (dailyPnL[dateString] || 0) + trade.PnL + trade.AdjustedCost;
+        const dateString = `${date.getMonth() + 1}/${date.getDate()}`;
+        dailyPnL[dateString] = (dailyPnL[dateString] || 0) + (trade.PnL || 0) + (trade.AdjustedCost || 0);
     }
-
-    // Sorted array of the daily PnLs
-    return Object.keys(dailyPnL).sort().map(date => dailyPnL[date]);
+    const sorted = Object.entries(dailyPnL).sort((a, b) => a[0].localeCompare(b[0]));
+    return { labels: sorted.map(e => e[0]), values: sorted.map(e => e[1]) };
 }
 
 interface NetDailyPnLProps {
     trades: Trade[];
 }
 
-export default function NetDailyPnL({trades}: NetDailyPnLProps) {
-
-    const dailyPnL = calculateDailyPnL(trades).map(t=>t.toFixed(2))
-    const colors = dailyPnL.map((value) => value < 0 ? transparentize('rgb(200, 0, 0)', 0.5) : transparentize('rgb(0, 220, 0)', 0.5));
-    const borderColors = dailyPnL.map((value) => value < 0 ? transparentize('rgb(200, 0, 0)', 0.0) : transparentize('rgb(0, 220, 0)', 0.0));
-    //console.log(dailyPnL)
-
+export default function NetDailyPnL({ trades }: NetDailyPnLProps) {
+    const { labels, values } = calculateDailyPnL(trades);
+    const colors = values.map(v => v >= 0 ? "rgba(16, 185, 129, 0.7)" : "rgba(239, 68, 68, 0.7)");
+    const borderColors = values.map(v => v >= 0 ? "#10b981" : "#ef4444");
 
     return (
-        <>
-            <ChartIsland
-                type="bar"
-                options={
+        <ChartIsland
+            type="bar"
+            options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: false },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: "#4b5563", font: { size: 10 } },
+                        grid: { color: "rgba(30, 34, 53, 0.8)" },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: "#4b5563", font: { size: 10 }, callback: (v: string | number) => `$${v}` },
+                        grid: { color: "rgba(30, 34, 53, 0.8)" },
+                    },
+                },
+                interaction: { mode: "index", intersect: false },
+            }}
+            data={{
+                labels,
+                datasets: [
                     {
-
-                        scales: {
-                            x: {
-                                display: false // Hide X axis labels
-                            },
-                            y: {
-                                beginAtZero: true
-                            }
-                        },
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: `Net Daily P&L`,
-                            },
-                            legend: {
-                                display: false
-                            },
-                        },
-                        interaction: {mode: "index", intersect: false}
-                    }}
-                data={{
-                    labels: dailyPnL,
-                    datasets: [
-                        {
-                            label: "Net Daily P&L",
-                            data: dailyPnL,
-                            backgroundColor: colors,
-                            borderColor: borderColors,
-
-                            borderWidth: 2
-                        },
-                    ],
-                }}
-            />
-        </>
+                        label: "Daily P&L",
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    },
+                ],
+            }}
+        />
     );
 }

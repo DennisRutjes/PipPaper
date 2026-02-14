@@ -1,0 +1,59 @@
+# PipPaper - TradeZella Clone Specification
+
+## Overview
+PipPaper is a comprehensive trade journaling and analysis platform designed to replicate the core functionality of TradeZella. It allows traders to import their trade data (specifically from Tradovate), analyze their performance through advanced metrics and visualizations, and receive AI-powered coaching feedback on their trades.
+
+## Tech Stack
+- **Runtime**: Deno
+- **Framework**: Fresh (Preact-based full-stack framework)
+- **Styling**: Tailwind CSS (via Twind)
+- **Database**: Deno KV (or SQLite via Deno, TBD based on complexity, default to KV for simplicity in Deno)
+- **AI Integration**: Google Gemini (Default), Anthropic Claude (Optional)
+
+## Core Features
+
+### 1. Dashboard
+- **Overview Cards**: Total P&L, Win Rate, Profit Factor, Average Win/Loss.
+- **Visualizations**: Equity Curve, Daily P&L Bar Chart, Win/Loss Distribution.
+- **Calendar View**: Monthly view showing daily P&L.
+
+### 2. Trade Log
+- **Table View**: List of all trades with columns for Date, Symbol, Side (Long/Short), Status (Win/Loss), P&L, R-Multiple, Setup, Mistakes.
+- **Filtering**: Filter by Date Range, Symbol, Setup, Status, Duration.
+- **Pagination**: Efficient handling of large trade lists.
+
+### 3. Trade Detail
+- **Execution View**: Visual representation of entry and exit points (if chart data available) or list of executions.
+- **Analysis Fields**: Setup tagging, Mistake tagging, Notes/Journal entry.
+- **AI Coach Section**:
+    - "Evaluate Trade" button.
+    - Display AI analysis of the trade based on execution quality, notes, and outcome.
+    - Chat interface for follow-up questions (optional).
+
+### 4. Data Import
+- **Tradovate Support**: Dedicated parser for Tradovate CSV export files.
+- **Generic CSV**: Fallback generic import mapping.
+- **Upload Interface**: Drag-and-drop file upload area.
+
+### 5. AI Trade Coach
+- **Integration**: Server-side calls to LLM APIs.
+- **Configuration**: User provides API Key in `.env` (or settings UI if local).
+- **Prompt Engineering**: System prompts to analyze trade psychology, risk management, and execution.
+
+### 6. Settings
+- **General**: Account currency, Timezone.
+- **API Keys**: Management of Gemini/Claude API keys (stored securely or in env).
+- **Tags**: Manage custom Setups and Mistakes tags.
+
+## Environment & Security
+- **Configuration**: Environment variables managed via `.env` file.
+- **Secrets**: `LLM_API_KEY`, `LLM_PROVIDER` (gemini/claude).
+- **Git Safety**: `.env` must be git-ignored. `.env.example` provided for template.
+
+## User Flow
+1. User starts app.
+2. User configures `.env` with API keys.
+3. User imports Tradovate CSV.
+4. Dashboard populates with metrics.
+5. User clicks a trade to view details.
+6. User clicks "Ask AI Coach" to get feedback on the trade.
