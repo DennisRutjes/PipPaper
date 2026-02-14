@@ -3,6 +3,7 @@ import SideMenu from "../../islands/SideMenu.tsx";
 import RichEditor from "../../islands/RichEditor.tsx";
 import AICoachButton from "../../islands/AICoachButton.tsx";
 import CandlestickChart from "../../islands/CandlestickChart.tsx";
+import DeleteTradeButton from "../../islands/DeleteTradeButton.tsx";
 import { storage } from "../../services/storage/StorageKV.ts";
 import { Trade } from "../../services/storage/entities/Trade.ts";
 import { Setup } from "../../services/storage/entities/Setup.ts";
@@ -33,11 +34,19 @@ export const handler: Handlers<TradeDetailData> = {
     },
     async POST(req, ctx) {
         const tradeID = ctx.params.tradeID;
-        const trade = await storage.getTrade(tradeID);
-        if (!trade) return ctx.renderNotFound();
-
         const form = await req.formData();
         const action = form.get("action")?.toString();
+
+        if (action === "delete_trade") {
+            await storage.deleteTrade(tradeID);
+            return new Response("", {
+                status: 303,
+                headers: { Location: "/trade_log" },
+            });
+        }
+
+        const trade = await storage.getTrade(tradeID);
+        if (!trade) return ctx.renderNotFound();
 
         let notesSaved = false;
         let setupsSaved = false;
@@ -125,6 +134,7 @@ export default function TradeDetail(props: PageProps<TradeDetailData>) {
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
+                            <DeleteTradeButton />
                             <span class={`px-3 py-1 rounded-lg text-xs font-bold ${
                                 isWin ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" :
                                 isLoss ? "bg-red-500/15 text-red-400 border border-red-500/30" :
