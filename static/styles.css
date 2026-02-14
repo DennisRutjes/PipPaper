@@ -1,0 +1,122 @@
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Dark mode (default) */
+html.dark body {
+    background: #0f1117;
+    color: #e2e8f0;
+}
+
+/* Light mode */
+html.light body {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+html.light .bg-\[\#0f1117\] { background: #f8fafc !important; }
+html.light .bg-\[\#141622\] { background: #ffffff !important; border-color: #e2e8f0 !important; }
+html.light .bg-\[\#1a1d2e\] { background: #f1f5f9 !important; }
+html.light .border-\[\#1e2235\] { border-color: #e2e8f0 !important; }
+html.light .border-\[\#2d3348\] { border-color: #cbd5e1 !important; }
+html.light .text-white { color: #0f172a !important; }
+html.light .text-gray-400 { color: #64748b !important; }
+html.light .text-gray-500 { color: #64748b !important; }
+html.light .text-gray-600 { color: #94a3b8 !important; }
+
+/* Light mode specific overrides for cards and inputs */
+html.light .bg-emerald-500\/10 { background: rgba(16, 185, 129, 0.08) !important; }
+html.light .bg-emerald-500\/15 { background: rgba(16, 185, 129, 0.1) !important; }
+html.light .bg-red-500\/10 { background: rgba(239, 68, 68, 0.08) !important; }
+html.light .bg-red-500\/15 { background: rgba(239, 68, 68, 0.1) !important; }
+html.light .bg-blue-500\/15 { background: rgba(59, 130, 246, 0.1) !important; }
+html.light .bg-orange-500\/15 { background: rgba(249, 115, 22, 0.1) !important; }
+html.light .bg-gray-500\/15 { background: rgba(107, 114, 128, 0.1) !important; }
+html.light .bg-indigo-500\/20 { background: rgba(99, 102, 241, 0.1) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+html.dark ::-webkit-scrollbar-track { background: #1a1d2e; }
+html.dark ::-webkit-scrollbar-thumb { background: #2d3348; border-radius: 3px; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #3d4458; }
+html.light ::-webkit-scrollbar-track { background: #f1f5f9; }
+html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Smooth transitions for theme switching */
+body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ─── Mobile Responsive Fixes ─── */
+
+/* Ensure proper padding for mobile with sidebar hidden */
+@media (max-width: 639px) {
+    /* Add top padding for the hamburger menu button */
+    body {
+        padding-top: 0;
+    }
+
+    /* Ensure content area has breathing room */
+    .sm\:ml-\[240px\] {
+        margin-left: 0 !important;
+        padding-top: 3.5rem;
+    }
+
+    /* Compact KPI cards on mobile */
+    .grid-cols-2 .bg-\[\#141622\] {
+        padding: 0.75rem !important;
+    }
+
+    /* Ensure tables scroll horizontally */
+    table {
+        display: table;
+        min-width: 100%;
+    }
+
+    /* Make date inputs more compact on mobile */
+    input[type="date"],
+    input[type="time"] {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.5rem;
+    }
+
+    /* Stack form grid items vertically on very small screens */
+    .grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Calendar grid stays at 7 columns */
+    .grid-cols-7 {
+        grid-template-columns: repeat(7, 1fr) !important;
+    }
+
+    /* Keep chart containers functional */
+    iframe {
+        min-height: 250px;
+    }
+}
+
+/* Small tablet adjustments */
+@media (min-width: 640px) and (max-width: 767px) {
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Ensure overflow scroll containers work on touch devices */
+.overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+/* Fix select inputs on mobile to prevent zoom */
+select, input, textarea {
+    font-size: 16px;
+}
+
+@media (min-width: 640px) {
+    select, input, textarea {
+        font-size: inherit;
+    }
+}

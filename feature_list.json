@@ -94,7 +94,7 @@
       "Select a specific symbol in filter",
       "Verify only trades for that symbol are shown"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 9,
@@ -169,7 +169,7 @@
       "Go to Trade Detail",
       "Verify 'FOMO' is available in tags dropdown"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 15,
@@ -181,6 +181,6 @@
       "Check Dashboard layout stacks correctly",
       "Check Trade Log table is scrollable or adapted"
     ],
-    "passes": false
+    "passes": true
   }
 ]

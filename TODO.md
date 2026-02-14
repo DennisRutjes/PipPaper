@@ -1,12 +1,12 @@
 - Trade Log: finished for now
     - [x] Trade Log FE
-    - [ ] filtering
-    - [ ] paging
-    - [ ] broker selection / show broker
+    - [x] filtering (symbol, status, date range, setup, broker)
+    - [x] paging (25/50/100 per page with navigation controls)
+    - [x] broker selection / show broker
 - Trade Detail CRUD
     - [x] show data
     - [ ] Trade kline graphics with trade entries max draw down?
-    - [ ] show entry/exit reasons (limit,stop,exit) add data from broker, make them editable
+    - [x] show entry/exit reasons (limit,stop,exit) add data from broker, make them editable
     - [x] add note
     - [x] add setup
     - [x] add tags
@@ -15,7 +15,11 @@
 - [x] Import
     - [x] Backend import
     - [x] Frontend import
+- [x] Settings
+    - [x] Custom tags management (mistake, setup, general)
+    - [x] General settings (placeholder)
+    - [x] AI Coach configuration info
+- [x] Mobile responsive layout
 
 - [ ] conversion of tradovate file to generic PipTrader files so these can also be manually crafted
-  - [ ]broker symbol yfinance mapping config screen
-
+  - [ ] broker symbol yfinance mapping config screen
