@@ -4,6 +4,7 @@ import { showToast } from "./Toast.tsx";
 
 export default function ImportForm() {
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [importedIds, setImportedIds] = useState<string[] | null>(null);
 
     const handleSubmit = async (e: Event) => {
@@ -15,37 +16,48 @@ export default function ImportForm() {
         if (!file) return;
 
         setUploading(true);
+        setUploadProgress(0);
         setImportedIds(null);
 
-        try {
-            // Add header to request JSON response
-            const res = await fetch("/import_trades", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "Accept": "application/json"
+        // Use XHR for upload progress
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/import_trades", true);
+        xhr.setRequestHeader("Accept", "application/json");
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                setUploadProgress(percentComplete);
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) throw new Error(data.error);
+
+                    if (data.importedIds && data.importedIds.length > 0) {
+                        setImportedIds(data.importedIds);
+                        showToast(`Imported ${data.importedIds.length} trades. Processing...`, "success");
+                    } else {
+                        showToast("No trades found in file.", "info");
+                    }
+                } catch (err) {
+                    showToast((err as Error).message, "error");
                 }
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || "Upload failed");
-            }
-
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-
-            if (data.importedIds && data.importedIds.length > 0) {
-                setImportedIds(data.importedIds);
-                showToast(`Imported ${data.importedIds.length} trades. Processing...`, "success");
             } else {
-                showToast("No trades found in file.", "info");
+                showToast(xhr.responseText || "Upload failed", "error");
             }
-        } catch (err: unknown) {
-            showToast((err as Error).message, "error");
-        } finally {
             setUploading(false);
-        }
+        };
+
+        xhr.onerror = () => {
+            showToast("Network error during upload", "error");
+            setUploading(false);
+        };
+
+        xhr.send(formData);
     };
 
     if (importedIds) {
@@ -85,12 +97,18 @@ export default function ImportForm() {
                 <label class="flex flex-col items-center justify-center w-full h-52 border-2 border-[#2d3348] border-dashed rounded-xl cursor-pointer bg-[#1a1d2e] hover:bg-[#1e2235] hover:border-emerald-500/30 transition-all group">
                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
                         {uploading ? (
-                            <div class="flex flex-col items-center animate-pulse">
+                            <div class="flex flex-col items-center w-full px-10">
                                 <svg class="w-10 h-10 mb-4 text-emerald-500 animate-spin" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                                 </svg>
-                                <p class="text-sm text-emerald-400 font-medium">Uploading and Parsing...</p>
+                                <p class="text-sm text-emerald-400 font-medium mb-2">Uploading... {uploadProgress}%</p>
+                                <div class="w-full bg-[#0f1117] rounded-full h-1.5 overflow-hidden">
+                                    <div 
+                                        class="bg-emerald-500 h-1.5 rounded-full transition-all duration-100 ease-linear" 
+                                        style={{ width: `${uploadProgress}%` }}
+                                    ></div>
+                                </div>
                             </div>
                         ) : (
                             <>
