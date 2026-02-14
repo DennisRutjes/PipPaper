@@ -34,7 +34,7 @@ interface WinRatioProps {
 
 export default function WinRatio({trades}: WinRatioProps) {
 
-    const ratioMap = countNumbers(trades.map(t => t.PnL))
+    const ratioMap = countNumbers(trades.map(t => t.PnL || 0))
 
     return (
         <>
@@ -55,7 +55,7 @@ export default function WinRatio({trades}: WinRatioProps) {
                     labels: [`winners:${ratioMap["win"]}`, `losers:${ratioMap["lose"]}`,`even:${ratioMap["even"]}`],
                     datasets: [
                         {
-                            labels: `Win:${ratioMap["win"]} Lose:${ratioMap["lose"]} Even:${ratioMap["even"]}`,
+                            label: `Win:${ratioMap["win"]} Lose:${ratioMap["lose"]} Even:${ratioMap["even"]}`,
                             data: [ratioMap["win"],ratioMap["lose"],ratioMap["even"]],
                             backgroundColor: [
                                 transparentize('rgb(0, 220, 0)', 0.2),

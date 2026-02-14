@@ -11,7 +11,7 @@ function calculateDailyPnL(trades: Trade[]): number[] {
         // Normalize to YYYY-MM-DD format
         const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         // Increment the PnL for current date
-        dailyPnL[dateString] = (dailyPnL[dateString] || 0) + trade.PnL + trade.AdjustedCost;
+        dailyPnL[dateString] = (dailyPnL[dateString] || 0) + (trade.PnL || 0) + (trade.AdjustedCost || 0);
     }
 
     // Sorted array of the daily PnLs
@@ -24,7 +24,7 @@ interface NetDailyPnLProps {
 
 export default function NetDailyPnL({trades}: NetDailyPnLProps) {
 
-    const dailyPnL = calculateDailyPnL(trades).map(t=>t.toFixed(2))
+    const dailyPnL = calculateDailyPnL(trades);
     const colors = dailyPnL.map((value) => value < 0 ? transparentize('rgb(200, 0, 0)', 0.5) : transparentize('rgb(0, 220, 0)', 0.5));
     const borderColors = dailyPnL.map((value) => value < 0 ? transparentize('rgb(200, 0, 0)', 0.0) : transparentize('rgb(0, 220, 0)', 0.0));
     //console.log(dailyPnL)

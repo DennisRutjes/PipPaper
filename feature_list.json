@@ -46,7 +46,7 @@
       "Navigate to Dashboard",
       "Verify Total P&L matches sum of trades"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 5,
@@ -58,7 +58,7 @@
       "Navigate to Dashboard",
       "Verify Win Rate percentage is correct"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 6,
@@ -70,7 +70,7 @@
       "Verify Equity Curve chart is rendered",
       "Check if chart trend matches trade history"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 7,

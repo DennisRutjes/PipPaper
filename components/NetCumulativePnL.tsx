@@ -16,10 +16,10 @@ interface NetCumulativePnLProps {
 
 export default function NetCumulativePnL({trades}: NetCumulativePnLProps) {
 
-    const cumulativeNetPnL = integrateArray(trades.map(t => t.PnL + t.AdjustedCost))
+    const cumulativeNetPnL = integrateArray(trades.map(t => (t.PnL || 0) + (t.AdjustedCost || 0)))
     const tradeTimes = trades.map(t => new Date(t.ExitTimestamp * 1000).toDateString())
 
-    const totalPnL = trades.reduce((sum, trade) => sum + (trade.PnL + trade.AdjustedCost), 0);
+    const totalPnL = trades.reduce((sum, trade) => sum + ((trade.PnL || 0) + (trade.AdjustedCost || 0)), 0);
 
     return (
         <>
@@ -45,14 +45,17 @@ export default function NetCumulativePnL({trades}: NetCumulativePnLProps) {
                     //         }
                     //     }
                     // },
-                    tension: 0.2,
+                    elements: {
+                        line: {
+                            tension: 0.2
+                        }
+                    },
                     interaction: {mode: "index", intersect: false}
                 }}
                 data={{
                     labels: tradeTimes,
                     datasets: [
                         {
-                            labels: tradeTimes,
                             fill: {
                                 target: {value: 0},
                                 above: transparentize('rgb(0, 220, 0)', 0.5),   // Area will be red above the origin
@@ -61,7 +64,7 @@ export default function NetCumulativePnL({trades}: NetCumulativePnLProps) {
                             label: `$ ${totalPnL.toFixed((2))} `,
                             data: cumulativeNetPnL,
                             backgroundColor: totalPnL > 0 ? transparentize('rgb(0, 220, 0)', 0.5) : transparentize('rgb(200, 0, 0)', 0.5),
-                            strokeColor: transparentize('rgb(100, 100, 100)', 0.5),
+                            borderColor: transparentize('rgb(100, 100, 100)', 0.5),
                         },
 
                     ],
