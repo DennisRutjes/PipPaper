@@ -10,10 +10,10 @@
     - [ ] add note
     - [ ] add setup
     - [ ] add tags
-- [ ] Dashboard
-- [ ] Import
+- [x] Dashboard
+- [x] Import
     - [x] Backend import
-    - [ ] Frontend import
+    - [x] Frontend import
 
 - [ ] conversion of tradovate file to generic PipTrader files so these can also be manually crafted
   - [ ]broker symbol yfinance mapping config screen
