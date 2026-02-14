@@ -6,6 +6,50 @@ export default function ImportForm() {
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [importedIds, setImportedIds] = useState<string[] | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+    const handleDrag = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setIsDragging(true);
+        } else if (e.type === "dragleave") {
+            setIsDragging(false);
+        }
+    };
+
+    const handleDrop = (e: any) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            setSelectedFile(file.name);
+            
+            // Update the hidden input
+            const input = document.querySelector('input[name="file"]') as HTMLInputElement;
+            if (input) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+                
+                // Auto-submit
+                const form = input.closest('form');
+                if (form) form.requestSubmit();
+            }
+        }
+    };
+
+    const handleFileSelect = (e: Event) => {
+        const input = e.target as HTMLInputElement;
+        if (input.files && input.files[0]) {
+            setSelectedFile(input.files[0].name);
+            // Auto-submit
+            input.closest('form')?.requestSubmit();
+        }
+    };
 
     const handleSubmit = async (e: Event) => {
         e.preventDefault();
@@ -13,7 +57,10 @@ export default function ImportForm() {
         const formData = new FormData(form);
         const file = formData.get("file") as File;
 
-        if (!file) return;
+        if (!file || file.size === 0) {
+            showToast("Please select a file first", "error");
+            return;
+        }
 
         setUploading(true);
         setUploadProgress(0);
@@ -66,7 +113,7 @@ export default function ImportForm() {
                 <ImportProcessor importedIds={importedIds} />
                 <div class="flex justify-center">
                     <button 
-                        onClick={() => setImportedIds(null)}
+                        onClick={() => { setImportedIds(null); setSelectedFile(null); }}
                         class="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +141,15 @@ export default function ImportForm() {
             </div>
 
             <form onSubmit={handleSubmit} class="space-y-6">
-                <label class="flex flex-col items-center justify-center w-full h-52 border-2 border-[#2d3348] border-dashed rounded-xl cursor-pointer bg-[#1a1d2e] hover:bg-[#1e2235] hover:border-emerald-500/30 transition-all group">
+                <label 
+                    class={`flex flex-col items-center justify-center w-full h-52 border-2 border-dashed rounded-xl cursor-pointer bg-[#1a1d2e] transition-all group ${
+                        isDragging ? "border-emerald-500 bg-[#1e2235]" : "border-[#2d3348] hover:bg-[#1e2235] hover:border-emerald-500/30"
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragOver={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDrop={handleDrop}
+                >
                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
                         {uploading ? (
                             <div class="flex flex-col items-center w-full px-10">
@@ -112,23 +167,23 @@ export default function ImportForm() {
                             </div>
                         ) : (
                             <>
-                                <svg class="w-10 h-10 mb-4 text-gray-600 group-hover:text-gray-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class={`w-10 h-10 mb-4 transition-colors ${isDragging ? "text-emerald-500" : "text-gray-600 group-hover:text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <p class="mb-2 text-sm text-gray-400">
-                                    <span class="font-semibold text-emerald-400">Click to upload</span> or drag and drop
+                                    {selectedFile ? (
+                                        <span class="font-semibold text-emerald-400">{selectedFile}</span>
+                                    ) : (
+                                        <>
+                                            <span class="font-semibold text-emerald-400">Click to upload</span> or drag and drop
+                                        </>
+                                    )}
                                 </p>
-                                <p class="text-xs text-gray-600">CSV files only (Performance.csv)</p>
+                                <p class="text-xs text-gray-600">{selectedFile ? "Click to change" : "CSV files only (Performance.csv)"}</p>
                             </>
                         )}
                     </div>
-                    <input name="file" type="file" class="hidden" accept=".csv" required disabled={uploading} 
-                        onChange={(e) => {
-                            if ((e.target as HTMLInputElement).files?.length) {
-                                // Optional: Auto-submit or show filename
-                            }
-                        }}
-                    />
+                    <input name="file" type="file" class="hidden" accept=".csv" disabled={uploading} onChange={handleFileSelect} />
                 </label>
 
                 <div class="flex justify-end">
