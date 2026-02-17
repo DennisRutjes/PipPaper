@@ -5,7 +5,7 @@ import { evaluateTrade } from "../../services/ai/AICoachService.ts";
 export const handler: Handlers = {
     async POST(req) {
         try {
-            const { tradeId, journalNotes } = await req.json();
+            const { tradeId, journalNotes, chartImage } = await req.json();
 
             if (!tradeId) {
                 return new Response(JSON.stringify({ error: "Missing tradeId" }), {
@@ -22,7 +22,7 @@ export const handler: Handlers = {
                 });
             }
 
-            const result = await evaluateTrade(trade, journalNotes);
+            const result = await evaluateTrade(trade, journalNotes, chartImage);
 
             // Persist the advice on the trade
             await storage.updateTrade(tradeId, {

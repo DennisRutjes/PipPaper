@@ -1,5 +1,6 @@
 import { Trade } from "../services/storage/entities/Trade.ts";
 import { Setup } from "../services/storage/entities/Setup.ts";
+import { StarRating } from "../components/StarRating.tsx";
 import type { Signal } from "@preact/signals";
 import { useState, useMemo } from "preact/hooks";
 
@@ -233,7 +234,7 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                 <table class="min-w-full">
                     <thead>
                         <tr class="border-b border-[#1e2235]">
-                            {["Status", "Symbol", "Broker", "Side", "Open Date", "Net P&L", "Gross P&L", "Entry", "Exit", "Duration", "Qty"].map(header => (
+                            {["Status", "AI", "Symbol", "Broker", "Side", "Open Date", "Net P&L", "Gross P&L", "Entry", "Exit", "Duration", "Qty"].map(header => (
                                 <th key={header} class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                     {header}
                                 </th>
@@ -263,6 +264,13 @@ export default function TradeLogTable(props: TradeLogTableProps) {
                                         }`}>
                                             {isWin ? "WIN" : isLoss ? "LOSS" : "EVEN"}
                                         </span>
+                                    </td>
+                                    <td class="px-4 py-3.5">
+                                        {trade.AIRating ? (
+                                            <StarRating rating={trade.AIRating} size="xs" />
+                                        ) : (
+                                            <span class="text-xs text-gray-600">-</span>
+                                        )}
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <span class="font-semibold text-white text-sm">{trade.Symbol}</span>

@@ -66,7 +66,7 @@ Provide your analysis in this format:
 IMPORTANT: Be extremely concise. Total response under 100 words. Use markdown.`;
 }
 
-export async function evaluateTrade(trade: Trade, journalNotes?: string): Promise<AICoachResult> {
+export async function evaluateTrade(trade: Trade, journalNotes?: string, chartImage?: string): Promise<AICoachResult> {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey || apiKey === "your_gemini_key_here") {
         throw new Error("GEMINI_API_KEY not configured. Add it to your .env file.");
@@ -81,11 +81,26 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string): Promis
     // Use Gemini REST API directly (no npm dependency needed)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+    const parts: any[] = [{ text: prompt }];
+
+    // Attach image if provided
+    if (chartImage) {
+        // Remove data URL prefix if present (e.g. "data:image/png;base64,")
+        const base64Image = chartImage.replace(/^data:image\/\w+;base64,/, "");
+        
+        parts.push({
+            inline_data: {
+                mime_type: "image/png",
+                data: base64Image
+            }
+        });
+    }
+
     const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts }],
             generationConfig: { maxOutputTokens: 1024 },
         }),
     });
@@ -112,16 +127,34 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string): Promis
             text = `Unexpected response format: ${JSON.stringify(data).substring(0, 200)}...`;
         }
     } else {
-        // Extract rating
-        const ratingMatch = text.match(/\*\*Rating\*\*:?\s*(\d)\/5/i) || text.match(/Rating:?\s*(\d)\/5/i);
+        // Extract rating with improved regex to handle decimals and markdown variations
+        // Matches: "**Rating**: 4/5", "Rating: 4.5/5", "Rating: **4**/5", "Rating: 4 out of 5"
+        const ratingMatch = text.match(/(?:Rating|Score).*?(\d+(?:\.\d+)?)\s*(?:\/|out of)\s*5/i);
         if (ratingMatch && ratingMatch[1]) {
-            rating = parseInt(ratingMatch[1]);
+            rating = parseFloat(ratingMatch[1]);
         }
 
         // Extract grade
-        const gradeMatch = text.match(/\*\*Trade Grade\*\*:?\s*([A-F][+-]?)/i) || text.match(/Trade Grade:?\s*([A-F][+-]?)/i);
+        const gradeMatch = text.match(/(?:Trade Grade|Grade).*?([A-F][+-]?)/i);
         if (gradeMatch && gradeMatch[1]) {
             grade = gradeMatch[1].toUpperCase();
+        }
+
+        // Fallback 1: Look for any "X/5" pattern if strict parsing failed
+        if (rating === undefined || rating === 0) {
+            const looseMatch = text.match(/(\d+(?:\.\d+)?)\s*\/\s*5/);
+            if (looseMatch && looseMatch[1]) {
+                rating = parseFloat(looseMatch[1]);
+            }
+        }
+
+        // Fallback 2: If no rating found but grade exists, estimate rating
+        if ((rating === undefined || rating === 0) && grade) {
+            if (grade.startsWith("A")) rating = 5;
+            else if (grade.startsWith("B")) rating = 4;
+            else if (grade.startsWith("C")) rating = 3;
+            else if (grade.startsWith("D")) rating = 2;
+            else if (grade.startsWith("F")) rating = 1;
         }
     }
 

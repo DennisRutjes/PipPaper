@@ -357,7 +357,7 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
                 </span>
             </div>
 
-            <canvas ref={canvasRef} class="w-full h-full block" />
+            <canvas id="trade-chart-canvas" ref={canvasRef} class="w-full h-full block" />
         </div>
     );
 }

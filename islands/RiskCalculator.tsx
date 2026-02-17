@@ -5,7 +5,6 @@ interface RiskCalculatorProps {
     initialProfitTarget: number | null;
     entryPrice: number;
     multiplier: number;
-    quantity: number;
     side: string; // "LONG" or "SHORT"
     tickSize: number;
 }
@@ -17,7 +16,6 @@ export default function RiskCalculator({
     initialProfitTarget,
     entryPrice,
     multiplier,
-    quantity,
     side,
     tickSize,
 }: RiskCalculatorProps) {
@@ -44,7 +42,7 @@ export default function RiskCalculator({
         
         if (m === "price") return price.toString();
         if (m === "ticks") return (dist / tickSize).toFixed(0); // Ticks are usually integers
-        if (m === "pnl") return (dist * multiplier * quantity).toFixed(2);
+        if (m === "pnl") return (dist * multiplier).toFixed(2);
         
         return "";
     };
@@ -58,7 +56,7 @@ export default function RiskCalculator({
 
         let dist = 0;
         if (m === "ticks") dist = v * tickSize;
-        if (m === "pnl") dist = v / (multiplier * quantity);
+        if (m === "pnl") dist = v / multiplier;
 
         // Calculate direction
         // For LONG: Stop is below, Target is above
@@ -126,7 +124,7 @@ export default function RiskCalculator({
                         onClick={() => handleModeChange("pnl")}
                         class={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === "pnl" ? "bg-emerald-600 text-white shadow" : "text-gray-400 hover:text-gray-200"}`}
                     >
-                        Net PnL ($)
+                        PnL / Contract ($)
                     </button>
                 </div>
             </div>
