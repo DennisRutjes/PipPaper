@@ -72,6 +72,10 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             return;
         }
 
+        // Add padding to avoid edge cutoff
+        const timeStepsVal = 5;
+        const timeIntervalVal = Math.floor(d.candles.length / timeStepsVal);
+        
         // Calculate scales with strict type coercion
         let minPrice = Infinity, maxPrice = -Infinity;
         let maxVol = 1;
@@ -87,12 +91,21 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             if (!isNaN(v) && v > maxVol) maxVol = v;
         });
 
+        // Add a safety buffer for entry/exit/stop/profit if they are outside candle range
+        const markers = [d.entryPrice, d.exitPrice, d.stopLoss, d.profitTarget].filter(v => v != null && !isNaN(v)) as number[];
+        markers.forEach(m => {
+            if (m < minPrice) minPrice = m;
+            if (m > maxPrice) maxPrice = m;
+        });
+
         // Safety check if min/max are still invalid
-        if (minPrice === Infinity || maxPrice === -Infinity) {
-             ctx.fillStyle = "#6b7280";
-             ctx.font = "14px sans-serif";
-             ctx.fillText("Invalid Price Data", w / 2 - 50, h / 2);
-             return;
+        if (minPrice === Infinity || maxPrice === -Infinity || minPrice >= maxPrice) {
+             // Fallback to avoid infinite/NaN calculations if range is zero
+             if (minPrice === Infinity && maxPrice === -Infinity) {
+                 minPrice = 0; maxPrice = 100;
+             } else if (minPrice >= maxPrice) {
+                 minPrice -= 1; maxPrice += 1;
+             }
         }
 
         // Add padding to price range
@@ -109,11 +122,16 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
         }
 
         const candleW = (w - padding.left - padding.right) / d.candles.length;
-        const gap = Math.max(1, candleW * 0.2);
-        const bodyW = candleW - gap;
+        // Ensure body has positive width, minimum 1px if plenty of space, otherwise just line
+        const gap = Math.max(0, candleW * 0.2); 
+        let bodyW = candleW - gap;
+        if (bodyW < 0.5) bodyW = 0.5; // hairline
 
         // Helper: Price to Y
-        const getY = (p: number) => padding.top + (maxPrice - p) / (maxPrice - minPrice) * (h - padding.top - padding.bottom);
+        const getY = (p: number) => {
+            if (isNaN(p) || p === null) return -100;
+            return padding.top + (maxPrice - p) / (maxPrice - minPrice) * (h - padding.top - padding.bottom);
+        };
         // Helper: Time to X
         const getX = (i: number) => padding.left + i * candleW + candleW / 2;
 
@@ -142,10 +160,11 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
 
         // Draw Time Axis (X)
         ctx.textAlign = "center";
-        const timeSteps = 5;
-        const timeInterval = Math.floor(d.candles.length / timeSteps);
         
-        for (let i = 0; i < d.candles.length; i += timeInterval) {
+        // Prevent infinite loop if candles < timeStepsVal
+        const tickInterval = Math.max(1, timeIntervalVal);
+        
+        for (let i = 0; i < d.candles.length; i += tickInterval) {
             const x = getX(i);
             const date = new Date(d.candles[i].t * 1000);
             
@@ -198,36 +217,39 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
         });
 
         // Draw Entry/Exit Lines
-        const entryY = getY(d.entryPrice);
-        const exitY = getY(d.exitPrice);
+        if (d.entryPrice) {
+            const entryY = getY(d.entryPrice);
+            // Entry Line (Blue dashed)
+            ctx.strokeStyle = "#3b82f6";
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, entryY);
+            ctx.lineTo(w - padding.right, entryY);
+            ctx.stroke();
+            ctx.setLineDash([]);
 
-        // Entry Line (Blue dashed)
-        ctx.strokeStyle = "#3b82f6";
-        ctx.setLineDash([5, 5]);
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(padding.left, entryY);
-        ctx.lineTo(w - padding.right, entryY);
-        ctx.stroke();
-        ctx.setLineDash([]);
+            // Label
+            ctx.fillStyle = "#3b82f6";
+            ctx.font = "10px sans-serif";
+            ctx.fillText(`ENTRY: ${d.entryPrice}`, w - padding.right + 5, entryY + 3);
+        }
 
-        // Label
-        ctx.fillStyle = "#3b82f6";
-        ctx.font = "10px sans-serif";
-        ctx.fillText(`ENTRY: ${d.entryPrice}`, w - padding.right + 5, entryY + 3);
+        if (d.exitPrice) {
+            const exitY = getY(d.exitPrice);
+            // Exit Line (Purple dashed)
+            ctx.strokeStyle = "#8b5cf6";
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(padding.left, exitY);
+            ctx.lineTo(w - padding.right, exitY);
+            ctx.stroke();
+            ctx.setLineDash([]);
 
-        // Exit Line (Purple dashed)
-        ctx.strokeStyle = "#8b5cf6";
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(padding.left, exitY);
-        ctx.lineTo(w - padding.right, exitY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Label
-        ctx.fillStyle = "#8b5cf6";
-        ctx.fillText(`EXIT: ${d.exitPrice}`, w - padding.right + 5, exitY + 3);
+            // Label
+            ctx.fillStyle = "#8b5cf6";
+            ctx.fillText(`EXIT: ${d.exitPrice}`, w - padding.right + 5, exitY + 3);
+        }
 
         // Draw Stop Loss if set
         if (d.stopLoss) {
