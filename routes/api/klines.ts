@@ -24,12 +24,28 @@ export const handler: Handlers = {
                 });
             }
 
-            // Return cached if available and not forcing refresh
-            if (trade.KlineData && !forceRefresh) {
+            // 1. Check if kline data is already persisted in separate KV store
+            let klineData = await storage.getKlineData(tradeId);
+            
+            // 2. Fallback: Check if it's stored on the trade object (legacy)
+            if (!klineData && trade.KlineData) {
+                // Only migrate if it looks valid (has candles)
+                if (trade.KlineData.candles && trade.KlineData.candles.length > 0) {
+                    console.log(`[Kline] Migrating legacy data for ${tradeId}`);
+                    klineData = trade.KlineData;
+                    // Migrate to new storage
+                    await storage.saveKlineData(tradeId, klineData);
+                } else {
+                    console.log(`[Kline] Legacy data for ${tradeId} is invalid/empty. Skipping migration.`);
+                }
+            }
+
+            // Return cached if available, valid, and not forcing refresh
+            if (klineData && klineData.candles && klineData.candles.length > 0 && !forceRefresh) {
                 return new Response(JSON.stringify({
                     success: true,
                     cached: true,
-                    ...trade.KlineData,
+                    ...klineData,
                     entryTimestamp: trade.EntryTimestamp,
                     exitTimestamp: trade.ExitTimestamp,
                     entryPrice: trade.EntryPrice,
@@ -42,15 +58,15 @@ export const handler: Handlers = {
                 });
             }
 
-            // Fetch fresh kline data
-            const klineData = await fetchKlines(
+            // 3. Fetch fresh kline data (only if missing or forced)
+            klineData = await fetchKlines(
                 trade.Symbol || "SPY",
                 trade.EntryTimestamp,
                 trade.ExitTimestamp,
             );
 
-            // Cache it on the trade
-            await storage.updateTrade(tradeId, { KlineData: klineData });
+            // 4. Persist it permanently
+            await storage.saveKlineData(tradeId, klineData);
 
             return new Response(JSON.stringify({
                 success: true,

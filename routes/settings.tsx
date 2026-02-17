@@ -1,6 +1,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import SideMenu from "../islands/SideMenu.tsx";
 import DeleteAllDataButton from "../islands/DeleteAllDataButton.tsx";
+import BackfillChartsButton from "../islands/BackfillChartsButton.tsx";
 import { storage } from "../services/storage/StorageKV.ts";
 import { Tag, TagCategory } from "../services/storage/entities/Tag.ts";
 
@@ -584,6 +585,10 @@ export default function SettingsPage(props: PageProps<SettingsData>) {
                                         </svg>
                                         Local Storage Only
                                     </span>
+                                </div>
+
+                                <div class="mb-6">
+                                    <BackfillChartsButton />
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

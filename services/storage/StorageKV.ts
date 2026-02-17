@@ -258,6 +258,24 @@ export class StorageKV {
     }
     return perf;
   }
+
+  // ─── Kline Data (Separate KV entry to avoid size limits on Trade object) ──
+
+  async saveKlineData(tradeId: string, data: any): Promise<void> {
+    // We use a separate key for klines. 
+    // Note: Deno KV has a 64KB value limit. If klines are huge, we might need chunking,
+    // but usually 1m/5m data for a single trade fits.
+    try {
+        await kv.set(["klines", tradeId], data);
+    } catch (e) {
+        console.error(`[StorageKV] Failed to save kline data for ${tradeId} (likely too large):`, e);
+    }
+  }
+
+  async getKlineData(tradeId: string): Promise<any | null> {
+    const result = await kv.get<any>(["klines", tradeId]);
+    return result.value;
+  }
 }
 
 export const storage = new StorageKV();

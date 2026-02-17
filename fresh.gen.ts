@@ -19,19 +19,21 @@ import * as $13 from "./routes/trade/[tradeID].tsx";
 import * as $14 from "./routes/trade_log.tsx";
 import * as $$0 from "./islands/AICoachButton.tsx";
 import * as $$1 from "./islands/AddTradeForm.tsx";
-import * as $$2 from "./islands/CandlestickChart.tsx";
-import * as $$3 from "./islands/DeleteAllDataButton.tsx";
-import * as $$4 from "./islands/DeleteTradeButton.tsx";
-import * as $$5 from "./islands/ImportForm.tsx";
-import * as $$6 from "./islands/ImportProcessor.tsx";
-import * as $$7 from "./islands/Modal.tsx";
-import * as $$8 from "./islands/PillSelector.tsx";
-import * as $$9 from "./islands/RichEditor.tsx";
-import * as $$10 from "./islands/RiskCalculator.tsx";
-import * as $$11 from "./islands/SideMenu.tsx";
-import * as $$12 from "./islands/Toast.tsx";
-import * as $$13 from "./islands/TradeLogTable.tsx";
-import * as $$14 from "./islands/chart.tsx";
+import * as $$2 from "./islands/BackfillChartsButton.tsx";
+import * as $$3 from "./islands/BulkEvaluateButton.tsx";
+import * as $$4 from "./islands/CandlestickChart.tsx";
+import * as $$5 from "./islands/DeleteAllDataButton.tsx";
+import * as $$6 from "./islands/DeleteTradeButton.tsx";
+import * as $$7 from "./islands/ImportForm.tsx";
+import * as $$8 from "./islands/ImportProcessor.tsx";
+import * as $$9 from "./islands/Modal.tsx";
+import * as $$10 from "./islands/PillSelector.tsx";
+import * as $$11 from "./islands/RichEditor.tsx";
+import * as $$12 from "./islands/RiskCalculator.tsx";
+import * as $$13 from "./islands/SideMenu.tsx";
+import * as $$14 from "./islands/Toast.tsx";
+import * as $$15 from "./islands/TradeLogTable.tsx";
+import * as $$16 from "./islands/chart.tsx";
 
 const manifest = {
   routes: {
@@ -54,19 +56,21 @@ const manifest = {
   islands: {
     "./islands/AICoachButton.tsx": $$0,
     "./islands/AddTradeForm.tsx": $$1,
-    "./islands/CandlestickChart.tsx": $$2,
-    "./islands/DeleteAllDataButton.tsx": $$3,
-    "./islands/DeleteTradeButton.tsx": $$4,
-    "./islands/ImportForm.tsx": $$5,
-    "./islands/ImportProcessor.tsx": $$6,
-    "./islands/Modal.tsx": $$7,
-    "./islands/PillSelector.tsx": $$8,
-    "./islands/RichEditor.tsx": $$9,
-    "./islands/RiskCalculator.tsx": $$10,
-    "./islands/SideMenu.tsx": $$11,
-    "./islands/Toast.tsx": $$12,
-    "./islands/TradeLogTable.tsx": $$13,
-    "./islands/chart.tsx": $$14,
+    "./islands/BackfillChartsButton.tsx": $$2,
+    "./islands/BulkEvaluateButton.tsx": $$3,
+    "./islands/CandlestickChart.tsx": $$4,
+    "./islands/DeleteAllDataButton.tsx": $$5,
+    "./islands/DeleteTradeButton.tsx": $$6,
+    "./islands/ImportForm.tsx": $$7,
+    "./islands/ImportProcessor.tsx": $$8,
+    "./islands/Modal.tsx": $$9,
+    "./islands/PillSelector.tsx": $$10,
+    "./islands/RichEditor.tsx": $$11,
+    "./islands/RiskCalculator.tsx": $$12,
+    "./islands/SideMenu.tsx": $$13,
+    "./islands/Toast.tsx": $$14,
+    "./islands/TradeLogTable.tsx": $$15,
+    "./islands/chart.tsx": $$16,
   },
   baseUrl: import.meta.url,
 };

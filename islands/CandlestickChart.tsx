@@ -23,21 +23,12 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        fetchData();
-    }, [tradeId]);
-
-    useEffect(() => {
-        if (data && canvasRef.current) {
-            drawChart(data);
-            window.addEventListener("resize", () => drawChart(data));
-            return () => window.removeEventListener("resize", () => drawChart(data));
-        }
-    }, [data]);
-
-    const fetchData = async () => {
+    const fetchData = async (force: boolean = false) => {
+        setLoading(true);
+        setError("");
         try {
-            const res = await fetch(`/api/klines?tradeId=${tradeId}`);
+            const url = `/api/klines?tradeId=${tradeId}${force === true ? "&refresh=1" : ""}`;
+            const res = await fetch(url);
             const json = await res.json();
             if (json.error) throw new Error(json.error);
             setData(json);
@@ -47,6 +38,10 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchData();
+    }, [tradeId]);
 
     const drawChart = (d: ChartData) => {
         const canvas = canvasRef.current;
@@ -77,20 +72,41 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             return;
         }
 
-        // Calculate scales
+        // Calculate scales with strict type coercion
         let minPrice = Infinity, maxPrice = -Infinity;
-        let maxVol = 0;
+        let maxVol = 1;
 
         d.candles.forEach(c => {
-            if (c.l < minPrice) minPrice = c.l;
-            if (c.h > maxPrice) maxPrice = c.h;
-            if (c.v > maxVol) maxVol = c.v;
+            // Ensure values are numbers
+            const l = Number(c.l);
+            const h = Number(c.h);
+            const v = Number(c.v);
+            
+            if (!isNaN(l) && l < minPrice) minPrice = l;
+            if (!isNaN(h) && h > maxPrice) maxPrice = h;
+            if (!isNaN(v) && v > maxVol) maxVol = v;
         });
 
+        // Safety check if min/max are still invalid
+        if (minPrice === Infinity || maxPrice === -Infinity) {
+             ctx.fillStyle = "#6b7280";
+             ctx.font = "14px sans-serif";
+             ctx.fillText("Invalid Price Data", w / 2 - 50, h / 2);
+             return;
+        }
+
         // Add padding to price range
-        const priceRange = maxPrice - minPrice;
-        minPrice -= priceRange * 0.1;
-        maxPrice += priceRange * 0.1;
+        let priceRange = maxPrice - minPrice;
+        
+        // Handle flat or zero range to prevent division by zero
+        if (priceRange <= 0) {
+            priceRange = maxPrice > 0 ? maxPrice * 0.01 : 1; 
+            minPrice -= priceRange;
+            maxPrice += priceRange;
+        } else {
+            minPrice -= priceRange * 0.1;
+            maxPrice += priceRange * 0.1;
+        }
 
         const candleW = (w - padding.left - padding.right) / d.candles.length;
         const gap = Math.max(1, candleW * 0.2);
@@ -161,7 +177,7 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             const color = isUp ? "#10b981" : "#ef4444"; // emerald / red
 
             // Volume bar
-            const vH = (c.v / maxVol) * volHeight;
+            const vH = (Number(c.v) / maxVol) * volHeight;
             ctx.fillStyle = isUp ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
             ctx.fillRect(x - bodyW / 2, volBaseY - vH, bodyW, vH);
 
@@ -169,14 +185,14 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             ctx.strokeStyle = color;
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(x, getY(c.h));
-            ctx.lineTo(x, getY(c.l));
+            ctx.moveTo(x, getY(Number(c.h)));
+            ctx.lineTo(x, getY(Number(c.l)));
             ctx.stroke();
 
             // Body
             ctx.fillStyle = color;
-            const yO = getY(c.o);
-            const yC = getY(c.c);
+            const yO = getY(Number(c.o));
+            const yC = getY(Number(c.c));
             const bH = Math.max(1, Math.abs(yC - yO));
             ctx.fillRect(x - bodyW / 2, Math.min(yO, yC), bodyW, bH);
         });
@@ -343,7 +359,7 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
                     <div class="text-red-400">
                         <p class="font-medium mb-1">Chart Error</p>
                         <p class="text-sm opacity-80">{error}</p>
-                        <button onClick={fetchData} class="mt-3 px-3 py-1 bg-[#1e2235] hover:bg-[#2d3348] rounded text-xs text-white transition-colors">
+                        <button onClick={() => fetchData(true)} class="mt-3 px-3 py-1 bg-[#1e2235] hover:bg-[#2d3348] rounded text-xs text-white transition-colors">
                             Retry
                         </button>
                     </div>
@@ -357,6 +373,18 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
                 </span>
             </div>
 
+            <div class="absolute top-3 right-4 z-10">
+                <button
+                    onClick={() => fetchData(true)}
+                    class="p-1.5 bg-[#1e2235] hover:bg-[#2d3348] border border-[#2d3348] rounded text-gray-400 hover:text-white transition-colors"
+                    title="Force refresh chart data"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+            </div>
+            
             <canvas id="trade-chart-canvas" ref={canvasRef} class="w-full h-full block" />
         </div>
     );

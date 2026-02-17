@@ -31,8 +31,9 @@ export default function ImportProcessor({ importedIds }: Props) {
                 
                 await Promise.all(batch.map(async (id) => {
                     try {
-                        // Force refresh kline data
-                        const res = await fetch(`/api/klines?tradeId=${id}&refresh=1`);
+                        // Fetch kline data (only if missing, unless refresh forced)
+                        // Removed refresh=1 to prevent re-fetching persisted data on every import
+                        const res = await fetch(`/api/klines?tradeId=${id}`);
                         const data = await res.json();
                         
                         if (!res.ok) throw new Error(`Failed to fetch klines for ${id}`);

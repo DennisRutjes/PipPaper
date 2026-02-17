@@ -3,6 +3,21 @@ import { storage } from "../../services/storage/StorageKV.ts";
 import { Trade } from "../../services/storage/entities/Trade.ts";
 
 export const handler: Handlers = {
+    // GET /api/trades - list all trades
+    async GET(_req) {
+        try {
+            const trades = await storage.getTrades();
+            return new Response(JSON.stringify(trades), {
+                headers: { "Content-Type": "application/json" },
+            });
+        } catch (e) {
+            return new Response(JSON.stringify({ error: (e as Error).message }), {
+                status: 500,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+    },
+
     // POST /api/trades — manual trade entry
     async POST(req) {
         try {
