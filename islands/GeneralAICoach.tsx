@@ -41,8 +41,8 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
                     currentSection = "strengths";
                     return (
                         <div key={i} class="mt-8 mb-4">
-                            <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2.5">
-                                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <h3 class="text-lg font-bold flex items-center gap-2.5" style="color: #34d399;">
+                                <svg class="w-5 h-5" style="color: #34d399;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 {title}
@@ -53,8 +53,8 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
                     currentSection = "weaknesses";
                     return (
                         <div key={i} class="mt-8 mb-4">
-                            <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2.5">
-                                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <h3 class="text-lg font-bold flex items-center gap-2.5" style="color: #fbbf24;">
+                                <svg class="w-5 h-5" style="color: #fbbf24;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                                 {title}
@@ -101,15 +101,15 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
             }
             // Bullet points
             if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
-                let bulletColor = "bg-gray-600";
-                if (currentSection === "strengths") bulletColor = "bg-emerald-500";
-                else if (currentSection === "weaknesses") bulletColor = "bg-amber-500";
-                else if (currentSection === "insight") bulletColor = "bg-blue-500";
-                else if (currentSection === "action") bulletColor = "bg-purple-500";
+                let bulletStyle = "background-color: #4b5563;"; // gray-600
+                if (currentSection === "strengths") bulletStyle = "background-color: #10b981;"; // emerald-500
+                else if (currentSection === "weaknesses") bulletStyle = "background-color: #f59e0b;"; // amber-500
+                else if (currentSection === "insight") bulletStyle = "background-color: #3b82f6;"; // blue-500
+                else if (currentSection === "action") bulletStyle = "background-color: #8b5cf6;"; // purple-500
 
                 return (
                     <div key={i} class="flex items-start gap-3 mb-3 pl-1">
-                        <div class={`w-1.5 h-1.5 rounded-full ${bulletColor} mt-2 flex-shrink-0`} />
+                        <div class="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={bulletStyle} />
                         <span class="text-gray-300 leading-relaxed text-sm" dangerouslySetInnerHTML={{ 
                             __html: line.replace(/^[-*] /, "").replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
                         }} />
