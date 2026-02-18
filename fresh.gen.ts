@@ -4,19 +4,20 @@
 
 import * as $0 from "./routes/_404.tsx";
 import * as $1 from "./routes/_app.tsx";
-import * as $2 from "./routes/api/ai-coach.ts";
-import * as $3 from "./routes/api/export.ts";
-import * as $4 from "./routes/api/import-backup.ts";
-import * as $5 from "./routes/api/klines.ts";
-import * as $6 from "./routes/api/trades.ts";
-import * as $7 from "./routes/import_trades.tsx";
-import * as $8 from "./routes/index.tsx";
-import * as $9 from "./routes/notebook.tsx";
-import * as $10 from "./routes/playbook.tsx";
-import * as $11 from "./routes/settings.tsx";
-import * as $12 from "./routes/stats_daily.tsx";
-import * as $13 from "./routes/trade/[tradeID].tsx";
-import * as $14 from "./routes/trade_log.tsx";
+import * as $2 from "./routes/api/ai-coach-general.ts";
+import * as $3 from "./routes/api/ai-coach.ts";
+import * as $4 from "./routes/api/export.ts";
+import * as $5 from "./routes/api/import-backup.ts";
+import * as $6 from "./routes/api/klines.ts";
+import * as $7 from "./routes/api/trades.ts";
+import * as $8 from "./routes/import_trades.tsx";
+import * as $9 from "./routes/index.tsx";
+import * as $10 from "./routes/notebook.tsx";
+import * as $11 from "./routes/playbook.tsx";
+import * as $12 from "./routes/settings.tsx";
+import * as $13 from "./routes/stats_daily.tsx";
+import * as $14 from "./routes/trade/[tradeID].tsx";
+import * as $15 from "./routes/trade_log.tsx";
 import * as $$0 from "./islands/AICoachButton.tsx";
 import * as $$1 from "./islands/AddTradeForm.tsx";
 import * as $$2 from "./islands/BackfillChartsButton.tsx";
@@ -24,34 +25,36 @@ import * as $$3 from "./islands/BulkEvaluateButton.tsx";
 import * as $$4 from "./islands/CandlestickChart.tsx";
 import * as $$5 from "./islands/DeleteAllDataButton.tsx";
 import * as $$6 from "./islands/DeleteTradeButton.tsx";
-import * as $$7 from "./islands/ImportForm.tsx";
-import * as $$8 from "./islands/ImportProcessor.tsx";
-import * as $$9 from "./islands/Modal.tsx";
-import * as $$10 from "./islands/PillSelector.tsx";
-import * as $$11 from "./islands/RichEditor.tsx";
-import * as $$12 from "./islands/RiskCalculator.tsx";
-import * as $$13 from "./islands/SideMenu.tsx";
-import * as $$14 from "./islands/Toast.tsx";
-import * as $$15 from "./islands/TradeLogTable.tsx";
-import * as $$16 from "./islands/chart.tsx";
+import * as $$7 from "./islands/GeneralAICoach.tsx";
+import * as $$8 from "./islands/ImportForm.tsx";
+import * as $$9 from "./islands/ImportProcessor.tsx";
+import * as $$10 from "./islands/Modal.tsx";
+import * as $$11 from "./islands/PillSelector.tsx";
+import * as $$12 from "./islands/RichEditor.tsx";
+import * as $$13 from "./islands/RiskCalculator.tsx";
+import * as $$14 from "./islands/SideMenu.tsx";
+import * as $$15 from "./islands/Toast.tsx";
+import * as $$16 from "./islands/TradeLogTable.tsx";
+import * as $$17 from "./islands/chart.tsx";
 
 const manifest = {
   routes: {
     "./routes/_404.tsx": $0,
     "./routes/_app.tsx": $1,
-    "./routes/api/ai-coach.ts": $2,
-    "./routes/api/export.ts": $3,
-    "./routes/api/import-backup.ts": $4,
-    "./routes/api/klines.ts": $5,
-    "./routes/api/trades.ts": $6,
-    "./routes/import_trades.tsx": $7,
-    "./routes/index.tsx": $8,
-    "./routes/notebook.tsx": $9,
-    "./routes/playbook.tsx": $10,
-    "./routes/settings.tsx": $11,
-    "./routes/stats_daily.tsx": $12,
-    "./routes/trade/[tradeID].tsx": $13,
-    "./routes/trade_log.tsx": $14,
+    "./routes/api/ai-coach-general.ts": $2,
+    "./routes/api/ai-coach.ts": $3,
+    "./routes/api/export.ts": $4,
+    "./routes/api/import-backup.ts": $5,
+    "./routes/api/klines.ts": $6,
+    "./routes/api/trades.ts": $7,
+    "./routes/import_trades.tsx": $8,
+    "./routes/index.tsx": $9,
+    "./routes/notebook.tsx": $10,
+    "./routes/playbook.tsx": $11,
+    "./routes/settings.tsx": $12,
+    "./routes/stats_daily.tsx": $13,
+    "./routes/trade/[tradeID].tsx": $14,
+    "./routes/trade_log.tsx": $15,
   },
   islands: {
     "./islands/AICoachButton.tsx": $$0,
@@ -61,16 +64,17 @@ const manifest = {
     "./islands/CandlestickChart.tsx": $$4,
     "./islands/DeleteAllDataButton.tsx": $$5,
     "./islands/DeleteTradeButton.tsx": $$6,
-    "./islands/ImportForm.tsx": $$7,
-    "./islands/ImportProcessor.tsx": $$8,
-    "./islands/Modal.tsx": $$9,
-    "./islands/PillSelector.tsx": $$10,
-    "./islands/RichEditor.tsx": $$11,
-    "./islands/RiskCalculator.tsx": $$12,
-    "./islands/SideMenu.tsx": $$13,
-    "./islands/Toast.tsx": $$14,
-    "./islands/TradeLogTable.tsx": $$15,
-    "./islands/chart.tsx": $$16,
+    "./islands/GeneralAICoach.tsx": $$7,
+    "./islands/ImportForm.tsx": $$8,
+    "./islands/ImportProcessor.tsx": $$9,
+    "./islands/Modal.tsx": $$10,
+    "./islands/PillSelector.tsx": $$11,
+    "./islands/RichEditor.tsx": $$12,
+    "./islands/RiskCalculator.tsx": $$13,
+    "./islands/SideMenu.tsx": $$14,
+    "./islands/Toast.tsx": $$15,
+    "./islands/TradeLogTable.tsx": $$16,
+    "./islands/chart.tsx": $$17,
   },
   baseUrl: import.meta.url,
 };

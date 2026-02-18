@@ -160,3 +160,81 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string, chartIm
 
     return { advice: text, rating, grade, provider: "gemini", model };
 }
+
+export async function evaluateOverallPerformance(trades: Trade[]): Promise<AICoachResult> {
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey || apiKey === "your_gemini_key_here") {
+        throw new Error("GEMINI_API_KEY not configured.");
+    }
+
+    // Filter for trades that have AI evaluations (AIAdvice or AIRating exists)
+    // Sort by exit timestamp descending (most recent first)
+    const recentTrades = trades
+        .filter(t => !!t.AIAdvice || !!t.AIRating)
+        .sort((a, b) => b.ExitTimestamp - a.ExitTimestamp)
+        .slice(0, 20); // Last 20 evaluated trades
+
+    if (recentTrades.length < 3) {
+        throw new Error("Need at least 3 evaluated trades (with AI advice) to provide a meaningful meta-analysis. Evaluate individual trades first.");
+    }
+
+    const tradeSummaries = recentTrades.map(t => {
+        const side = t.Side || ((t.EntryPrice || 0) > (t.ExitPrice || 0) && (t.PnL || 0) > 0 ? "SHORT" : "LONG");
+        const pnl = t.PnL || 0;
+        const result = pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BREAKEVEN";
+        const mistakes = t.Mistakes?.join(", ") || "None";
+        const rating = t.AIRating ? `${t.AIRating}/5` : "N/A";
+        const grade = t.AIGrade || "N/A";
+        const date = new Date(t.ExitTimestamp * 1000).toLocaleDateString();
+        // Include a snippet of the previous AI advice to give context for meta-analysis
+        const adviceSnippet = t.AIAdvice ? t.AIAdvice.substring(0, 200).replace(/\n/g, " ") + "..." : "No detailed advice";
+
+        return `- [${date}] ${t.Symbol} (${side}): ${result} ($${pnl.toFixed(0)}), Setup: ${t.SetupIDs?.join(",") || "None"}, Mistakes: ${mistakes}, Rating: ${rating}, Grade: ${grade}. Previous AI Evaluation: "${adviceSnippet}"`;
+    }).join("\n");
+
+    const prompt = `You are a high-level trading performance mentor. Your task is to perform a meta-analysis on the last ${recentTrades.length} trades, specifically looking at the patterns identified by the previous AI evaluations for each trade.
+
+Historical Trade Evaluations:
+${tradeSummaries}
+
+Based on the data AND the previous AI evaluations provided above, provide a high-level coaching assessment. Focus on recurring psychological patterns, execution consistency, and strategic drift.
+
+Format your response exactly as follows:
+## 1. Strengths
+[Bullet points on what they are consistently doing well based on evaluation history]
+
+## 2. Weaknesses & Patterns
+[Bullet points on recurring mistakes or bad habits highlighted across multiple trades]
+
+## 3. Key Insight
+[One major observation about their current evolution as a trader]
+
+## 4. Action Plan
+[1-2 specific "homework" items for the next trading week]
+
+Keep it constructive, direct, and under 300 words. Use markdown.`;
+
+
+    const settings = await storage.getSettings();
+    const model = settings.ai_model || Deno.env.get("AI_MODEL") || "gemini-1.5-pro";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 1024 },
+        }),
+    });
+
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Gemini API error (${res.status}): ${err}`);
+    }
+
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No advice generated.";
+
+    return { advice: text, provider: "gemini", model };
+}

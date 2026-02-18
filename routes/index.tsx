@@ -5,10 +5,12 @@ import SideMenu from "../islands/SideMenu.tsx";
 import NetCumulativePnL from "../components/NetCumulativePnL.tsx";
 import NetDailyPnL from "../components/NetDailyPnL.tsx";
 import WinRatio from "../components/WinRatio.tsx";
+import GeneralAICoach from "../islands/GeneralAICoach.tsx";
 import { calculateDailyPnLMap } from "../services/utils/utils.ts";
 
 interface DashboardData {
   trades: Trade[];
+  generalAdvice: { advice: string; timestamp: number } | null;
   totalPnL: number;
   winRate: number;
   profitFactor: number;
@@ -37,6 +39,8 @@ export const handler: Handlers<DashboardData> = {
     const to = url.searchParams.get("to");
 
     let trades = await storage.getTrades();
+    const generalAdvice = await storage.getGeneralAdvice();
+
     trades.sort((a, b) => a.ExitTimestamp - b.ExitTimestamp);
 
     if (from) {
@@ -93,7 +97,7 @@ export const handler: Handlers<DashboardData> = {
     }
 
     return ctx.render({
-      trades, totalPnL, winRate, profitFactor, avgWin, avgLoss,
+      trades, generalAdvice, totalPnL, winRate, profitFactor, avgWin, avgLoss,
       totalTrades: trades.length, winCount: wins.length, lossCount: losses.length,
       bestTrade, worstTrade, calendarData, winDays, lossDays, totalDays, winDayRate,
       expectancy, largestWinStreak: maxWin, largestLossStreak: maxLoss,
@@ -175,7 +179,7 @@ function TradeZellaCalendar({ data }: { data: Record<string, { pnl: number; trad
 
 export default function Home({ data }: PageProps<DashboardData>) {
   const {
-    trades, totalPnL, winRate, profitFactor, avgWin, avgLoss,
+    trades, generalAdvice, totalPnL, winRate, profitFactor, avgWin, avgLoss,
     totalTrades, winCount, lossCount, bestTrade, worstTrade,
     calendarData, winDays, lossDays, totalDays, winDayRate,
     expectancy, largestWinStreak, largestLossStreak,
@@ -214,67 +218,78 @@ export default function Home({ data }: PageProps<DashboardData>) {
           <KpiCard label="Worst Trade" value={`$${worstTrade.toFixed(2)}`} color={worstTrade < 0 ? "text-red-400" : "text-gray-400"} />
         </div>
 
-        {/* Charts Row 1: Win % by Trades + Equity Curve */}
+        {/* Main Dashboard Layout */}
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-          <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Winning % By Trades</h3>
-            <div class="h-52 flex justify-center">
-              <WinRatio trades={trades} />
-            </div>
-          </div>
-          <div class="lg:col-span-2 bg-[#141622] rounded-xl border border-[#1e2235] p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Daily Net Cumulative P&L</h3>
-            <div class="h-52">
-              <NetCumulativePnL trades={trades} />
-            </div>
-          </div>
-          <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Net Daily P&L</h3>
-            <div class="h-52">
-              <NetDailyPnL trades={trades} />
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Win % by Days + Calendar */}
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-          <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Winning % By Days</h3>
-            <div class="flex flex-col items-center justify-center h-52">
-              <div class="relative w-36 h-36">
-                <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e2235" stroke-width="3" />
-                  {totalDays > 0 && (
-                    <>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="3"
-                        stroke-dasharray={`${winDayRate} ${100 - winDayRate}`} stroke-dashoffset="0" />
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ef4444" stroke-width="3"
-                        stroke-dasharray={`${(lossDays / totalDays) * 100} ${100 - (lossDays / totalDays) * 100}`}
-                        stroke-dashoffset={`-${winDayRate}`} />
-                    </>
-                  )}
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span class="text-2xl font-bold text-white">{winDayRate.toFixed(0)}<span class="text-sm">%</span></span>
-                  <span class="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold">Winrate</span>
-                </div>
-              </div>
-              <div class="flex gap-4 mt-3">
-                <div class="flex items-center gap-1.5">
-                  <div class="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-                  <span class="text-xs text-gray-400"><span class="font-bold text-white">{winDays}</span> winners</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-2.5 h-2.5 rounded-sm bg-red-500" />
-                  <span class="text-xs text-gray-400"><span class="font-bold text-white">{lossDays}</span> losers</span>
-                </div>
-              </div>
-            </div>
+          
+          {/* Column 1: AI Coach Sidebar (1/4 width) */}
+          <div class="lg:col-span-1">
+              <GeneralAICoach initialAdvice={generalAdvice} />
           </div>
 
-          <div class="lg:col-span-3 bg-[#141622] rounded-xl border border-[#1e2235] p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Performance Calendar</h3>
-            <TradeZellaCalendar data={calendarData} />
+          {/* Columns 2-4: Main Content (3/4 width) */}
+          <div class="lg:col-span-3 flex flex-col gap-6">
+            {/* Top Row: Donut + Charts */}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5 h-full">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Winning % By Trades</h3>
+                    <div class="h-52 flex justify-center">
+                    <WinRatio trades={trades} />
+                    </div>
+                </div>
+                <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Daily Net Cumulative P&L</h3>
+                    <div class="h-52">
+                    <NetCumulativePnL trades={trades} />
+                    </div>
+                </div>
+                <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Net Daily P&L</h3>
+                    <div class="h-52">
+                    <NetDailyPnL trades={trades} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Row: Donut + Calendar */}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-5 h-full">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Winning % By Days</h3>
+                    <div class="flex flex-col items-center justify-center h-52">
+                    <div class="relative w-36 h-36">
+                        <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e2235" stroke-width="3" />
+                        {totalDays > 0 && (
+                            <>
+                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="3"
+                                stroke-dasharray={`${winDayRate} ${100 - winDayRate}`} stroke-dashoffset="0" />
+                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ef4444" stroke-width="3"
+                                stroke-dasharray={`${(lossDays / totalDays) * 100} ${100 - (lossDays / totalDays) * 100}`}
+                                stroke-dashoffset={`-${winDayRate}`} />
+                            </>
+                        )}
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-2xl font-bold text-white">{winDayRate.toFixed(0)}<span class="text-sm">%</span></span>
+                        <span class="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold">Winrate</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-3">
+                        <div class="flex items-center gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
+                        <span class="text-xs text-gray-400"><span class="font-bold text-white">{winDays}</span> winners</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-sm bg-red-500" />
+                        <span class="text-xs text-gray-400"><span class="font-bold text-white">{lossDays}</span> losers</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-[#141622] rounded-xl border border-[#1e2235] p-5">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Performance Calendar</h3>
+                    <TradeZellaCalendar data={calendarData} />
+                </div>
+            </div>
           </div>
         </div>
 

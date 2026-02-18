@@ -276,6 +276,20 @@ export class StorageKV {
     const result = await kv.get<any>(["klines", tradeId]);
     return result.value;
   }
+
+  // ─── General Coach Advice ─────────────────────────────────────
+
+  async saveGeneralAdvice(advice: string): Promise<void> {
+    await kv.set(["general_coach_advice"], {
+      advice,
+      timestamp: Date.now() / 1000,
+    });
+  }
+
+  async getGeneralAdvice(): Promise<{ advice: string; timestamp: number } | null> {
+    const res = await kv.get<{ advice: string; timestamp: number }>(["general_coach_advice"]);
+    return res.value;
+  }
 }
 
 export const storage = new StorageKV();
