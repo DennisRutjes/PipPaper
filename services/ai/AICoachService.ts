@@ -32,7 +32,7 @@ async function buildPrompt(trade: Trade, journalNotes?: string): Promise<string>
         }
     }
 
-    return `You are an expert trading coach analyzing a completed trade. Provide constructive, actionable feedback and a rating.
+    return `You are an expert trading coach analyzing a completed trade. Be highly critical, honest, and direct. Do not sugarcoat mistakes. Provide constructive, actionable feedback and a rating.
 
 Trade Details:
 - Symbol: ${trade.Symbol}
@@ -101,7 +101,10 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string, chartIm
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             contents: [{ parts }],
-            generationConfig: { maxOutputTokens: 1024 },
+            generationConfig: { 
+                maxOutputTokens: 8192,
+                temperature: 0.7,
+            },
         }),
     });
 
@@ -197,7 +200,7 @@ export async function evaluateOverallPerformance(trades: Trade[]): Promise<AICoa
 Historical Trade Evaluations:
 ${tradeSummaries}
 
-Based on the data AND the previous AI evaluations provided above, provide a high-level coaching assessment. 
+Based on the data AND the previous AI evaluations provided above, provide a high-level coaching assessment. Focus on recurring psychological patterns, execution consistency, and strategic drift. Be extremely critical and honest. Do not sugarcoat bad habits. Call out psychological flaws directly.
 
 CRITICAL GUIDELINE: Ignore the dollar amounts of wins or losses. Focus entirely on whether the trader followed their process, managed risk correctly, and avoided recurring mistakes. A "profitable" trade with bad process should be treated as a failure. A "loss" with perfect execution should be praised.
 
@@ -226,7 +229,10 @@ Keep it constructive, direct, and under 300 words. Use markdown.`;
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 1024 },
+            generationConfig: { 
+                maxOutputTokens: 8192,
+                temperature: 0.7,
+            },
         }),
     });
 
