@@ -192,25 +192,27 @@ export async function evaluateOverallPerformance(trades: Trade[]): Promise<AICoa
         return `- [${date}] ${t.Symbol} (${side}): ${result} ($${pnl.toFixed(0)}), Setup: ${t.SetupIDs?.join(",") || "None"}, Mistakes: ${mistakes}, Rating: ${rating}, Grade: ${grade}. Previous AI Evaluation: "${adviceSnippet}"`;
     }).join("\n");
 
-    const prompt = `You are a high-level trading performance mentor. Your task is to perform a meta-analysis on the last ${recentTrades.length} trades, specifically looking at the patterns identified by the previous AI evaluations for each trade.
+    const prompt = `You are a high-level trading performance mentor focusing strictly on PROCESS, DISCIPLINE, and EXECUTION quality. Your task is to perform a meta-analysis on the last ${recentTrades.length} trades, specifically looking at the patterns identified by the previous AI evaluations for each trade.
 
 Historical Trade Evaluations:
 ${tradeSummaries}
 
-Based on the data AND the previous AI evaluations provided above, provide a high-level coaching assessment. Focus on recurring psychological patterns, execution consistency, and strategic drift.
+Based on the data AND the previous AI evaluations provided above, provide a high-level coaching assessment. 
+
+CRITICAL GUIDELINE: Ignore the dollar amounts of wins or losses. Focus entirely on whether the trader followed their process, managed risk correctly, and avoided recurring mistakes. A "profitable" trade with bad process should be treated as a failure. A "loss" with perfect execution should be praised.
 
 Format your response exactly as follows:
 ## 1. Strengths
-[Bullet points on what they are consistently doing well based on evaluation history]
+[Bullet points on consistent positive habits in execution and discipline]
 
 ## 2. Weaknesses & Patterns
-[Bullet points on recurring mistakes or bad habits highlighted across multiple trades]
+[Bullet points on recurring process failures or psychological traps highlighted across evaluations]
 
 ## 3. Key Insight
-[One major observation about their current evolution as a trader]
+[One major observation about their current evolution in discipline and process adherence]
 
 ## 4. Action Plan
-[1-2 specific "homework" items for the next trading week]
+[1-2 specific process-based "homework" items for the next trading week - e.g., "Set a hard stop before entry", "Wait for 2nd candle confirmation"]
 
 Keep it constructive, direct, and under 300 words. Use markdown.`;
 
