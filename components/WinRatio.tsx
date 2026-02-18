@@ -22,26 +22,39 @@ export default function WinRatio({ trades }: WinRatioProps) {
             options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "70%",
+                cutout: "85%",
                 plugins: {
                     legend: {
                         display: true,
                         position: "bottom",
                         labels: {
                             color: "#9ca3af",
-                            font: { size: 11 },
-                            boxWidth: 12,
-                            padding: 16,
+                            font: { size: 10, family: "Inter" },
+                            boxWidth: 8,
+                            padding: 12,
+                            usePointStyle: true,
                         },
                     },
                     title: {
                         display: true,
-                        text: `Win Rate: ${winRate}%`,
-                        color: "#e5e7eb",
-                        font: { size: 14, weight: "bold" },
-                        padding: { bottom: 8 },
+                        text: `${winRate}%`,
+                        color: "#ffffff",
+                        font: { size: 24, weight: "bold", family: "Inter" },
+                        padding: { top: 10, bottom: 0 },
+                        align: "center",
                     },
+                    subtitle: {
+                        display: true,
+                        text: "Win Rate",
+                        color: "#10b981",
+                        font: { size: 10, weight: "600", family: "Inter" },
+                        align: "center",
+                        padding: { top: 40 }, // Push it down below the percentage
+                    }
                 },
+                layout: {
+                    padding: 10
+                }
             }}
             data={{
                 labels: [`Wins: ${wins}`, `Losses: ${losses}`, `Even: ${evens}`],

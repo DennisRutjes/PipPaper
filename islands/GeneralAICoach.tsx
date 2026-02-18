@@ -63,37 +63,39 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
                 }
 
                 return (
-                    <h3 key={i} class="text-lg font-bold text-white mt-5 mb-3 flex items-center gap-2">
-                        {icon}
-                        {title}
-                    </h3>
+                    <div key={i} class="mt-8 mb-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2.5">
+                            {icon}
+                            {title}
+                        </h3>
+                    </div>
                 );
             }
             if (line.startsWith("# ")) {
-                return <h2 key={i} class="text-xl font-bold text-emerald-400 mt-6 mb-3">{line.replace("# ", "")}</h2>;
+                return <h2 key={i} class="text-xl font-bold text-emerald-400 mt-8 mb-4">{line.replace("# ", "")}</h2>;
             }
             // Bullet points
             if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
                 return (
-                    <div key={i} class="flex gap-2 ml-1 mb-1">
-                        <span class="text-emerald-500 mt-1.5">•</span>
-                        <span class="text-gray-300" dangerouslySetInnerHTML={{ 
-                            __html: line.replace(/^[-*] /, "").replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") 
+                    <div key={i} class="flex items-start gap-3 mb-3 pl-1">
+                        <div class="w-1.5 h-1.5 rounded-full bg-gray-600 mt-2 flex-shrink-0" />
+                        <span class="text-gray-300 leading-relaxed text-sm" dangerouslySetInnerHTML={{ 
+                            __html: line.replace(/^[-*] /, "").replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
                         }} />
                     </div>
                 );
             }
             // Bold only lines or normal text
             return (
-                <p key={i} class="text-gray-300 mb-2 leading-relaxed" dangerouslySetInnerHTML={{ 
-                    __html: line.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") 
+                <p key={i} class="text-gray-300 mb-4 leading-relaxed text-sm pl-1" dangerouslySetInnerHTML={{ 
+                    __html: line.replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
                 }} />
             );
         });
     };
 
     return (
-        <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-6 relative overflow-hidden h-full flex flex-col">
+        <div class="bg-[#141622] rounded-xl border border-[#1e2235] p-6 relative overflow-hidden flex flex-col h-full">
             {/* Background decoration */}
             <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <svg class="w-32 h-32 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
@@ -152,7 +154,7 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
             )}
 
             {advice && (
-                <div class="bg-[#1a1d2e] rounded-xl p-6 text-sm text-gray-300 relative flex-1">
+                <div class="bg-[#1a1d2e] rounded-xl p-6 text-sm text-gray-300 relative flex-1 overflow-y-auto min-h-0">
                     {timestamp && (
                         <div class="absolute top-4 right-4 text-[10px] text-gray-600">
                             Generated: {new Date(timestamp * 1000).toLocaleString()}
