@@ -15,11 +15,39 @@ install_deno() {
     echo "✅ Deno installed successfully."
 }
 
+# Function to install Ollama
+install_ollama() {
+    echo "🦙 Ollama not found. Installing..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    echo "✅ Ollama installed successfully."
+    
+    # Pull gemma4 model
+    echo "📦 Pulling gemma4 model..."
+    ollama pull gemma4
+    echo "✅ gemma4 model ready."
+}
+
 # Check if Deno is installed
 if ! command -v deno &> /dev/null; then
     install_deno
 else
     echo "✅ Deno is already installed: $(deno --version | head -n 1)"
+fi
+
+# Check if Ollama is installed
+if ! command -v ollama &> /dev/null; then
+    install_ollama
+else
+    echo "✅ Ollama is already installed: $(ollama --version)"
+    
+    # Check if gemma4 model exists
+    if ! ollama list | grep -q gemma4; then
+        echo "📦 Pulling gemma4 model..."
+        ollama pull gemma4
+        echo "✅ gemma4 model ready."
+    else
+        echo "✅ gemma4 model already cached."
+    fi
 fi
 
 # Check .env

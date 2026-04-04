@@ -10,6 +10,63 @@ export interface AICoachResult {
     model: string;
 }
 
+type Provider = "gemini" | "ollama";
+
+function getProvider(): Provider {
+    const envProvider = Deno.env.get("LLM_PROVIDER")?.toLowerCase();
+    return (envProvider as Provider) || "gemini";
+}
+
+async function evaluateWithOllama(prompt: string, _chartImage?: string): Promise<AICoachResult> {
+    const model = Deno.env.get("OLLAMA_MODEL") || "gemma4";
+    const baseUrl = Deno.env.get("OLLAMA_BASE_URL") || "http://localhost:11434";
+    
+    try {
+        const res = await fetch(`${baseUrl}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: prompt }],
+                stream: false,
+            }),
+        });
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(`Ollama API error (${res.status}): ${err}`);
+        }
+
+        const data = await res.json();
+        const text = data.message?.content || "No response from Ollama.";
+        
+        let rating: number | undefined;
+        let grade: string | undefined;
+        
+        const ratingMatch = text.match(/(?:Rating|Score).*?(\d+(?:\.\d+)?)\s*(?:\/|out of)\s*5/i);
+        if (ratingMatch && ratingMatch[1]) {
+            rating = parseFloat(ratingMatch[1]);
+        }
+
+        const gradeMatch = text.match(/(?:Trade Grade|Grade).*?([A-F][+-]?)/i);
+        if (gradeMatch && gradeMatch[1]) {
+            grade = gradeMatch[1].toUpperCase();
+        }
+
+        if ((rating === undefined || rating === 0) && grade) {
+            if (grade.startsWith("A")) rating = 5;
+            else if (grade.startsWith("B")) rating = 4;
+            else if (grade.startsWith("C")) rating = 3;
+            else if (grade.startsWith("D")) rating = 2;
+            else if (grade.startsWith("F")) rating = 1;
+        }
+
+        return { advice: text, rating, grade, provider: "ollama", model };
+    } catch (err) {
+        throw new Error(`Ollama unavailable. Make sure Ollama is running with '${model}' model cached. Error: ${(err as Error).message}`);
+    }
+}
+
 async function buildPrompt(trade: Trade, journalNotes?: string): Promise<string> {
     const side = trade.Side || ((trade.EntryPrice || 0) > (trade.ExitPrice || 0) && (trade.PnL || 0) > 0 ? "SHORT" : "LONG");
     const pnl = trade.PnL || 0;
@@ -67,25 +124,30 @@ IMPORTANT: Be extremely concise. Total response under 100 words. Use markdown.`;
 }
 
 export async function evaluateTrade(trade: Trade, journalNotes?: string, chartImage?: string): Promise<AICoachResult> {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!apiKey || apiKey === "your_gemini_key_here") {
-        throw new Error("GEMINI_API_KEY not configured. Add it to your .env file.");
-    }
-
+    const provider = getProvider();
     const prompt = await buildPrompt(trade, journalNotes);
     
-    // Get model from settings, env, or default to flagship
+    if (provider === "ollama") {
+        return evaluateWithOllama(prompt, chartImage);
+    }
+    
+    return evaluateWithGemini(prompt, chartImage);
+}
+
+async function evaluateWithGemini(prompt: string, chartImage?: string): Promise<AICoachResult> {
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey || apiKey === "your_gemini_key_here") {
+        throw new Error("GEMINI_API_KEY not configured. Add it to your .env file, or switch to local model (wllama/ollama) in LLM_PROVIDER.");
+    }
+    
     const settings = await storage.getSettings();
     const model = settings.ai_model || Deno.env.get("AI_MODEL") || "gemini-1.5-pro";
 
-    // Use Gemini REST API directly (no npm dependency needed)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const parts: any[] = [{ text: prompt }];
 
-    // Attach image if provided
     if (chartImage) {
-        // Remove data URL prefix if present (e.g. "data:image/png;base64,")
         const base64Image = chartImage.replace(/^data:image\/\w+;base64,/, "");
         
         parts.push({
@@ -165,17 +227,12 @@ export async function evaluateTrade(trade: Trade, journalNotes?: string, chartIm
 }
 
 export async function evaluateOverallPerformance(trades: Trade[]): Promise<AICoachResult> {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!apiKey || apiKey === "your_gemini_key_here") {
-        throw new Error("GEMINI_API_KEY not configured.");
-    }
-
-    // Filter for trades that have AI evaluations (AIAdvice or AIRating exists)
-    // Sort by exit timestamp descending (most recent first)
+    const provider = getProvider();
+    
     const recentTrades = trades
         .filter(t => !!t.AIAdvice || !!t.AIRating)
         .sort((a, b) => b.ExitTimestamp - a.ExitTimestamp)
-        .slice(0, 20); // Last 20 evaluated trades
+        .slice(0, 20);
 
     if (recentTrades.length < 3) {
         throw new Error("Need at least 3 evaluated trades (with AI advice) to provide a meaningful meta-analysis. Evaluate individual trades first.");
@@ -184,12 +241,11 @@ export async function evaluateOverallPerformance(trades: Trade[]): Promise<AICoa
     const tradeSummaries = recentTrades.map(t => {
         const side = t.Side || ((t.EntryPrice || 0) > (t.ExitPrice || 0) && (t.PnL || 0) > 0 ? "SHORT" : "LONG");
         const pnl = t.PnL || 0;
-        const result = pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BREAKEVEN";
+        const result = pnl > 0 ? "WIN" : pnl < 0 ? "LONG" : "BREAKEVEN";
         const mistakes = t.Mistakes?.join(", ") || "None";
         const rating = t.AIRating ? `${t.AIRating}/5` : "N/A";
         const grade = t.AIGrade || "N/A";
         const date = new Date(t.ExitTimestamp * 1000).toLocaleDateString();
-        // Include a snippet of the previous AI advice to give context for meta-analysis
         const adviceSnippet = t.AIAdvice ? t.AIAdvice.substring(0, 200).replace(/\n/g, " ") + "..." : "No detailed advice";
 
         return `- [${date}] ${t.Symbol} (${side}): ${result} ($${pnl.toFixed(0)}), Setup: ${t.SetupIDs?.join(",") || "None"}, Mistakes: ${mistakes}, Rating: ${rating}, Grade: ${grade}. Previous AI Evaluation: "${adviceSnippet}"`;
@@ -219,6 +275,18 @@ Format your response exactly as follows:
 
 Keep it constructive, direct, and under 300 words. Use markdown.`;
 
+    if (provider === "ollama") {
+        return evaluateWithOllama(prompt);
+    }
+    
+    return evaluateOverallWithGemini(prompt);
+}
+
+async function evaluateOverallWithGemini(prompt: string): Promise<AICoachResult> {
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey || apiKey === "your_gemini_key_here") {
+        throw new Error("GEMINI_API_KEY not configured. Add it to your .env file, or switch to local model (wllama/ollama) in LLM_PROVIDER.");
+    }
 
     const settings = await storage.getSettings();
     const model = settings.ai_model || Deno.env.get("AI_MODEL") || "gemini-1.5-pro";

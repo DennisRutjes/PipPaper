@@ -35,6 +35,43 @@ if %errorlevel% neq 0 (
 :deno_done
 echo.
 
+REM Check if Ollama is installed
+where ollama >nul 2>&1
+if %errorlevel% neq 0 (
+    echo  Ollama not found. Installing...
+    echo.
+    powershell -Command "irm https://ollama.com/install.ps1 | iex"
+    
+    where ollama >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo  ERROR: Ollama installation failed.
+        echo  Please install Ollama manually: https://ollama.com/
+        echo  Then re-run this script.
+        pause
+        exit /b 1
+    )
+    echo  Ollama installed successfully.
+    
+    echo.
+    echo  Pulling gemma4 model...
+    ollama pull gemma4
+    echo  gemma4 model ready.
+) else (
+    echo  Ollama is already installed.
+    
+    ollama list | findstr gemma4 >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo  Pulling gemma4 model...
+        ollama pull gemma4
+        echo  gemma4 model ready.
+    ) else (
+        echo  gemma4 model already cached.
+    )
+)
+
+echo.
+
 REM Check .env
 if not exist .env (
     echo  .env file not found. Creating from .env.example...
