@@ -31,11 +31,16 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
     // Simple markdown-ish rendering
     const renderContent = (text: string) => {
         let currentSection = "neutral";
+        
+        // Remove UTF-8 BOM and leading/trailing blank spaces from the whole output
+        const cleanedText = text.replace(/^\uFEFF/, "").trim();
 
-        return text.split("\n").map((line, i) => {
+        return cleanedText.split("\n").map((line, i) => {
+            const trimmedLine = line.trim();
+
             // Headers
-            if (line.startsWith("## ")) {
-                const title = line.replace("## ", "");
+            if (trimmedLine.startsWith("## ")) {
+                const title = trimmedLine.replace("## ", "").trim();
 
                 if (title.includes("Strengths")) {
                     currentSection = "strengths";
@@ -96,11 +101,11 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
                     </div>
                 );
             }
-            if (line.startsWith("# ")) {
-                return <h2 key={i} class="text-xl font-bold text-emerald-400 mt-8 mb-4">{line.replace("# ", "")}</h2>;
+            if (trimmedLine.startsWith("# ")) {
+                return <h2 key={i} class="text-xl font-bold text-emerald-400 mt-8 mb-4">{trimmedLine.replace("# ", "")}</h2>;
             }
             // Bullet points
-            if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
+            if (trimmedLine.startsWith("- ") || trimmedLine.startsWith("* ")) {
                 let bulletStyle = "background-color: #4b5563;"; // gray-600
                 if (currentSection === "strengths") bulletStyle = "background-color: #10b981;"; // emerald-500
                 else if (currentSection === "weaknesses") bulletStyle = "background-color: #f59e0b;"; // amber-500
@@ -111,7 +116,7 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
                     <div key={i} class="flex items-start gap-3 mb-3 pl-1">
                         <div class="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={bulletStyle} />
                         <span class="text-gray-300 leading-relaxed text-sm" dangerouslySetInnerHTML={{ 
-                            __html: line.replace(/^[-*] /, "").replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
+                            __html: trimmedLine.replace(/^[-*] /, "").replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
                         }} />
                     </div>
                 );
@@ -119,7 +124,7 @@ export default function GeneralAICoach({ initialAdvice }: GeneralAICoachProps) {
             // Bold only lines or normal text
             return (
                 <p key={i} class="text-gray-300 mb-4 leading-relaxed text-sm pl-1" dangerouslySetInnerHTML={{ 
-                    __html: line.replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
+                    __html: trimmedLine.replace(/\*\*(.*?)\*\*/g, "<span class='text-white font-bold'>$1</span>") 
                 }} />
             );
         });
