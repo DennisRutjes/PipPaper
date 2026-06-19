@@ -12,12 +12,13 @@ import * as $6 from "./routes/api/klines.ts";
 import * as $7 from "./routes/api/trades.ts";
 import * as $8 from "./routes/import_trades.tsx";
 import * as $9 from "./routes/index.tsx";
-import * as $10 from "./routes/notebook.tsx";
-import * as $11 from "./routes/playbook.tsx";
-import * as $12 from "./routes/settings.tsx";
-import * as $13 from "./routes/stats_daily.tsx";
-import * as $14 from "./routes/trade/[tradeID].tsx";
-import * as $15 from "./routes/trade_log.tsx";
+import * as $10 from "./routes/mcp.ts";
+import * as $11 from "./routes/notebook.tsx";
+import * as $12 from "./routes/playbook.tsx";
+import * as $13 from "./routes/settings.tsx";
+import * as $14 from "./routes/stats_daily.tsx";
+import * as $15 from "./routes/trade/[tradeID].tsx";
+import * as $16 from "./routes/trade_log.tsx";
 import * as $$0 from "./islands/AICoachButton.tsx";
 import * as $$1 from "./islands/AddTradeForm.tsx";
 import * as $$2 from "./islands/BackfillChartsButton.tsx";
@@ -49,12 +50,13 @@ const manifest = {
     "./routes/api/trades.ts": $7,
     "./routes/import_trades.tsx": $8,
     "./routes/index.tsx": $9,
-    "./routes/notebook.tsx": $10,
-    "./routes/playbook.tsx": $11,
-    "./routes/settings.tsx": $12,
-    "./routes/stats_daily.tsx": $13,
-    "./routes/trade/[tradeID].tsx": $14,
-    "./routes/trade_log.tsx": $15,
+    "./routes/mcp.ts": $10,
+    "./routes/notebook.tsx": $11,
+    "./routes/playbook.tsx": $12,
+    "./routes/settings.tsx": $13,
+    "./routes/stats_daily.tsx": $14,
+    "./routes/trade/[tradeID].tsx": $15,
+    "./routes/trade_log.tsx": $16,
   },
   islands: {
     "./islands/AICoachButton.tsx": $$0,

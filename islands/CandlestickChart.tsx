@@ -350,6 +350,57 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
             // Check for overlap
             const isOverlap = entryValid && exitValid && closestEntryIndex === closestExitIndex;
 
+            // --- Profit/Loss Shading between Entry and Exit ---
+            // For each candle between entry and exit, fill from the entry price line
+            // to that candle's close. Green if in profit, red if underwater.
+            if (entryValid && exitValid && d.entryPrice != null && !isNaN(d.entryPrice)) {
+                const entryY = getY(d.entryPrice);
+                const isLong = (d.side || "").toUpperCase() === "SHORT" ? false : true; // default LONG
+                const idxStart = Math.min(closestEntryIndex, closestExitIndex);
+                const idxEnd = Math.max(closestEntryIndex, closestExitIndex);
+
+                for (let i = idxStart; i <= idxEnd; i++) {
+                    const c = candlesToRender[i];
+                    if (!c) continue;
+                    const closeY = getY(Number(c.c));
+                    const x = getX(i);
+                    const top = Math.min(entryY, closeY);
+                    const bot = Math.max(entryY, closeY);
+                    const inProfit = isLong ? Number(c.c) >= d.entryPrice : Number(c.c) <= d.entryPrice;
+                    ctx.fillStyle = inProfit ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)";
+                    ctx.fillRect(x - candleW / 2, top, candleW, bot - top);
+                }
+
+                // Solid entry price line across the holding window
+                ctx.strokeStyle = "rgba(59, 130, 246, 0.4)";
+                ctx.setLineDash([]);
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(getX(idxStart), entryY);
+                ctx.lineTo(getX(idxEnd), entryY);
+                ctx.stroke();
+            }
+
+            // Helper: draw a time badge at the top of a vertical marker line
+            const drawTimeBadge = (x: number, timestamp: number, color: string) => {
+                const date = new Date(timestamp * 1000);
+                const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+                ctx.font = "10px sans-serif";
+                const labelW = ctx.measureText(timeStr).width + 8;
+                const labelH = 14;
+                const labelX = Math.max(padding.left, Math.min(x - labelW / 2, w - padding.right - labelW));
+                // Background pill
+                ctx.fillStyle = color;
+                ctx.fillRect(labelX, padding.top - 2, labelW, labelH);
+                // Text
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(timeStr, labelX + labelW / 2, padding.top + labelH / 2 - 1);
+                ctx.textBaseline = "alphabetic";
+                ctx.textAlign = "left";
+            };
+
             // Draw Entry Marker (Triangle at bottom)
             if (entryValid) {
                 const x = getX(closestEntryIndex);
@@ -359,10 +410,13 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
                 ctx.setLineDash([2, 4]); 
                 ctx.strokeStyle = "rgba(59, 130, 246, 0.5)"; 
                 ctx.lineWidth = 1;
-                ctx.moveTo(x, padding.top);
+                ctx.moveTo(x, padding.top + 14);
                 ctx.lineTo(x, h - padding.bottom);
                 ctx.stroke();
                 ctx.setLineDash([]);
+
+                // Time badge
+                drawTimeBadge(x, d.entryTimestamp, "#3b82f6");
 
                 // Marker
                 const markerX = isOverlap ? x - 5 : x;
@@ -383,10 +437,13 @@ export default function CandlestickChart({ tradeId }: { tradeId: string }) {
                 ctx.setLineDash([2, 4]); 
                 ctx.strokeStyle = "rgba(139, 92, 246, 0.5)";
                 ctx.lineWidth = 1;
-                ctx.moveTo(x, padding.top);
+                ctx.moveTo(x, padding.top + 14);
                 ctx.lineTo(x, h - padding.bottom);
                 ctx.stroke();
                 ctx.setLineDash([]);
+
+                // Time badge
+                drawTimeBadge(x, d.exitTimestamp, "#8b5cf6");
 
                 // Marker
                 const markerX = isOverlap ? x + 5 : x;
