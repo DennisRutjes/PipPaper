@@ -1,4 +1,5 @@
 import { storage } from "../storage/StorageKV.ts";
+import { fetchChart } from "./YahooAuth.ts";
 
 export interface Candle {
     t: number;   // timestamp (seconds)
@@ -196,12 +197,10 @@ export async function fetchKlines(
 }
 
 async function fetchYahoo(symbol: string, period1: number, period2: number, interval: string, now: number): Promise<KlineData> {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${Math.floor(period1)}&period2=${Math.floor(period2)}&interval=${interval}`;
-
-    const res = await fetch(url, {
-        headers: {
-            "User-Agent": "Mozilla/5.0",
-        },
+    const res = await fetchChart(symbol, {
+        period1: String(Math.floor(period1)),
+        period2: String(Math.floor(period2)),
+        interval,
     });
 
     if (!res.ok) {
