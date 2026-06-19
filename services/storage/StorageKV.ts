@@ -259,22 +259,57 @@ export class StorageKV {
     return perf;
   }
 
-  // ─── Kline Data (Separate KV entry to avoid size limits on Trade object) ──
+  // ─── Kline Data (Chunked to respect Deno KV's 64KB value limit) ──
+
+  private static CHUNK_SIZE = 50_000; // bytes, safely under 64KB limit
 
   async saveKlineData(tradeId: string, data: any): Promise<void> {
-    // We use a separate key for klines. 
-    // Note: Deno KV has a 64KB value limit. If klines are huge, we might need chunking,
-    // but usually 1m/5m data for a single trade fits.
     try {
-        await kv.set(["klines", tradeId], data);
+      const json = JSON.stringify(data);
+      if (json.length <= StorageKV.CHUNK_SIZE) {
+        // Small enough — single key, mark as unchunked
+        await kv.set(["klines", tradeId], { __chunked: false, payload: data });
+        return;
+      }
+      // Too large — split into chunks
+      const chunks: string[] = [];
+      for (let i = 0; i < json.length; i += StorageKV.CHUNK_SIZE) {
+        chunks.push(json.slice(i, i + StorageKV.CHUNK_SIZE));
+      }
+      await kv.atomic()
+        .set(["klines", tradeId], { __chunked: true, count: chunks.length })
+        .commit();
+      for (let i = 0; i < chunks.length; i++) {
+        await kv.set(["klines", tradeId, i], chunks[i]);
+      }
     } catch (e) {
-        console.error(`[StorageKV] Failed to save kline data for ${tradeId} (likely too large):`, e);
+      console.error(`[StorageKV] Failed to save kline data for ${tradeId}:`, e);
     }
   }
 
   async getKlineData(tradeId: string): Promise<any | null> {
-    const result = await kv.get<any>(["klines", tradeId]);
-    return result.value;
+    const meta = await kv.get<any>(["klines", tradeId]);
+    if (!meta.value) return null;
+
+    // Legacy format (pre-chunking): raw data with no wrapper
+    if (meta.value.__chunked === undefined) return meta.value;
+
+    if (!meta.value.__chunked) {
+      return meta.value.payload;
+    }
+
+    // Chunked: reassemble
+    const count: number = meta.value.count;
+    let json = "";
+    for (let i = 0; i < count; i++) {
+      const chunk = await kv.get<string>(["klines", tradeId, i]);
+      if (chunk.value) json += chunk.value;
+    }
+    try {
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
   }
 
   // ─── General Coach Advice ─────────────────────────────────────
