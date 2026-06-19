@@ -89,7 +89,14 @@ async function buildPrompt(trade: Trade, journalNotes?: string): Promise<string>
         }
     }
 
-    return `You are an expert trading coach analyzing a completed trade. Be highly critical, honest, and direct. Do not sugarcoat mistakes. Provide constructive, actionable feedback and a rating.
+    return `You are an expert trading coach analyzing a completed trade. Be honest and direct.
+
+CRITICAL GRADING PHILOSOPHY:
+- Grade EXECUTION QUALITY and STRATEGY ADHERENCE, NOT the financial outcome.
+- A loss that follows the strategy rules perfectly is a well-executed trade. Losses are an inherent, expected part of any profitable trading system. Do NOT penalize a trade simply because it lost money.
+- A win with poor discipline (chasing, no stop, oversized risk) should be graded harshly.
+- A loss with proper entry timing, correct stop placement, and correct position sizing should be graded HIGHLY.
+- Ask: "Did the trader follow their plan?" If yes, the grade should reflect good execution regardless of P&L.
 
 Trade Details:
 - Symbol: ${trade.Symbol}
@@ -114,9 +121,9 @@ Trade Details:
 ${journalNotes ? "Trader's Journal Notes:\n" + journalNotes : ""}
 
 Provide your analysis in this format:
-1. **Trade Grade**: [Grade]
-2. **Analysis**: [2 sentences max on what went well and what didn't]
-3. **Actionable Tip**: [1 sentence practical tip]
+1. **Trade Grade**: [Grade A+ to F — based on execution quality and strategy adherence, NOT win/loss]
+2. **Analysis**: [2 sentences max on execution quality and whether the plan was followed]
+3. **Actionable Tip**: [1 sentence practical tip for improvement]
 4. **Rating**: X/5
 5. **Rating Reason**: [1 short sentence]
 
