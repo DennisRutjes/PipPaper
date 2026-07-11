@@ -16,3 +16,11 @@ Thumbs.db
 .vscode
 .idea
 *.swp
+
+# Desktop app build artifacts (use GitHub Releases for distribution)
+desktop/dist/
+desktop/icon.iconset/
+*.dmg
+*.msi
+*.AppImage
+*.app

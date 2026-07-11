@@ -87,15 +87,42 @@ Full light/dark theme toggle via the sidebar. Preference is persisted in localSt
 - **Settings** — Custom tag management (Mistake/Setup/General), AI Coach config, account settings
 - **Dark/Light Theme** — Full theme toggle persisted in localStorage
 - **Mobile Responsive** — Collapsible sidebar with hamburger menu
+- **Desktop App** — Native macOS, Windows, and Linux builds via `deno desktop`. Download from [Releases](https://github.com/DennisRutjes/PipPaper/releases/latest)
 - **Privacy First** — All data stored locally via Deno KV, never leaves your machine
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### Desktop App (Recommended)
 
-- [Deno](https://deno.land/) v1.40+
+Download the latest pre-built desktop application — no Deno or dependencies required:
+
+👉 **[Download from GitHub Releases](https://github.com/DennisRutjes/PipPaper/releases/latest)**
+
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon) | `PipPaper-macOS-arm64.dmg` |
+| macOS (Intel) | `PipPaper-macOS-x64.dmg` |
+| Windows | `PipPaper-Windows-x64.msi` |
+| Linux | `PipPaper-Linux-x64.AppImage` |
+| Linux (ARM) | `PipPaper-Linux-arm64.AppImage` |
+
+> **Note:** Desktop builds use `deno desktop` (experimental in Deno 2.9). All data is stored locally — nothing leaves your machine except AI Coach prompts (if using Gemini).
+
+**Linux:** WebKit2GTK is required for the AppImage:
+```bash
+sudo apt install libwebkit2gtk-4.1-dev   # Debian/Ubuntu
+sudo dnf install webkit2gtk4.1-devel      # Fedora
+```
+
+---
+
+### Run from Source (Developer)
+
+#### Prerequisites
+
+- [Deno](https://deno.land/) v2.9+
 
 ### Quick Start (macOS / Linux)
 
@@ -177,6 +204,64 @@ OLLAMA_MODEL=gemma4                      # model name (must match `ollama pull`)
 
 ---
 
+### Building Desktop Apps from Source
+
+PipPaper can be compiled into native desktop applications for macOS, Windows, and Linux using [`deno desktop`](https://docs.deno.com/runtime/desktop/) (requires Deno 2.9+).
+
+#### Quick build (current platform only)
+
+```bash
+deno desktop --no-check -A --unstable-kv --include deno.json --icon desktop/icon.icns main.ts
+```
+
+This opens a native window immediately (for testing). To produce a distributable binary, use `--output`:
+
+```bash
+# macOS .dmg
+deno desktop --no-check -A --unstable-kv --include deno.json --icon desktop/icon.icns   --output PipPaper.dmg main.ts
+
+# Windows .msi
+deno desktop --no-check -A --unstable-kv --include deno.json --icon desktop/icon.ico   --output PipPaper.msi main.ts
+
+# Linux .AppImage
+deno desktop --no-check -A --unstable-kv --include deno.json --icon desktop/icon.png   --output PipPaper.AppImage main.ts
+```
+
+#### Build all platforms (cross-compile)
+
+A build script is included that compiles all five targets from a single machine:
+
+```bash
+./desktop/build.sh           # build all platforms
+./desktop/build.sh macos     # macOS only (ARM64 + x64)
+./desktop/build.sh windows   # Windows only
+./desktop/build.sh linux     # Linux only (x64 + ARM64)
+```
+
+Artifacts are written to `desktop/dist/`. No platform-specific toolchain is needed — `deno desktop` cross-compiles using pre-built webview backends.
+
+#### Build flags explained
+
+| Flag | Purpose |
+|------|---------|
+| `--no-check` | Skip type-checking (the app type-checks cleanly via `deno task start`) |
+| `-A` | Grant all permissions (network for Yahoo Finance + AI, KV, filesystem) |
+| `--unstable-kv` | Enable Deno KV (local database) |
+| `--include deno.json` | Embed `deno.json` in the binary (Fresh needs it at runtime for import resolution) |
+| `--icon <file>` | App icon (`.icns` for macOS, `.ico` for Windows, `.png` for Linux) |
+| `--target <triple>` | Cross-compile target (e.g. `x86_64-pc-windows-msvc`) |
+| `--backend webview` | Use OS webview engine (default, smaller binaries). `cef` bundles Chromium. |
+
+#### Regenerating the icon
+
+The app icon was generated with Pillow. To regenerate or modify:
+
+```bash
+python3 desktop/generate_icon.py   # produces icon.png, icon.ico, icon.icns
+```
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -207,6 +292,7 @@ OLLAMA_MODEL=gemma4                      # model name (must match `ollama pull`)
 - [x] Mobile responsive layout
 - [ ] Symbol mapping configuration
 - [ ] NinjaTrader / MetaTrader / IBKR import
+- [x] Desktop App (macOS, Windows, Linux via `deno desktop`)
 - [ ] Multi-account support
 
 ---
