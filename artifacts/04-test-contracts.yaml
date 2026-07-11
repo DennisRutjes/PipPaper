@@ -1,0 +1,355 @@
+# Test Contracts (CRISPY-V Phase 4)
+# Generated from artifacts/04-openspec.yaml
+# Every OpenSpec element (INV/PRE/POST/PROP) appears in at least one test contract.
+# These drive test generation in Phase 7 (unit/integration) and Phase 8 (system/acceptance).
+
+test_contracts:
+  # ─────────────────────────────────────────────────────────────────
+  # UNIT TESTS — validate component design
+  # File pattern: artifacts/tests/unit/*_test.ts
+  # ─────────────────────────────────────────────────────────────────
+  unit:
+    - id: "UT-001"
+      source_constraint: "PRE-001"
+      description: "Manual trade entry validates required fields with proper type checking"
+      test_type: "validation"
+      cases:
+        - input: { symbol: "AAPL", entryPrice: 150.0, exitPrice: 155.0, quantity: 100 }
+          expected: "valid"
+        - input: { symbol: "AAPL", entryPrice: 0, exitPrice: 5.0, quantity: 100 }
+          expected: "valid"
+          note: "Q3 FIX: entryPrice=0 must be accepted, not rejected by falsy check"
+        - input: { symbol: "", entryPrice: 150, exitPrice: 155, quantity: 100 }
+          expected: "validation_error"
+        - input: { symbol: "AAPL", exitPrice: 155, quantity: 100 }
+          expected: "validation_error"
+          note: "missing entryPrice"
+        - input: { symbol: "AAPL", entryPrice: "abc", exitPrice: 155, quantity: 100 }
+          expected: "validation_error"
+          note: "entryPrice must be a number, not arbitrary string"
+
+    - id: "UT-002"
+      source_constraint: "INV-002"
+      description: "AdjustedCost sign convention — commissions stored as negative"
+      test_type: "invariant"
+      cases:
+        - input: { AdjustedCost: -5.50 }
+          expected: "valid"
+        - input: { AdjustedCost: 0 }
+          expected: "valid"
+        - input: { AdjustedCost: 5.50 }
+          expected: "valid"
+          note: "Spec documents convention but does NOT enforce negative at schema level — positive is a data error, not validation error"
+        - input: { AdjustedCost: null }
+          expected: "valid"
+          note: "null is acceptable — guarded with || 0 everywhere"
+
+    - id: "UT-003"
+      source_constraint: "INV-001"
+      description: "BrokerTradeID is non-empty string, used as KV primary key"
+      test_type: "invariant"
+      cases:
+        - input: { BrokerTradeID: "manual_1698765432000" }
+          expected: "valid"
+        - input: { BrokerTradeID: "12345_67890" }
+          expected: "valid"
+        - input: { BrokerTradeID: "" }
+          expected: "validation_error"
+        - input: { BrokerTradeID: null }
+          expected: "validation_error"
+
+    - id: "UT-004"
+      source_constraint: "PRE-001"
+      description: "PnL calculation formula for LONG vs SHORT"
+      test_type: "invariant"
+      cases:
+        - input: { side: "LONG", entryPrice: 100, exitPrice: 110, quantity: 10 }
+          expected: 100
+          note: "(110-100)*10 = 100"
+        - input: { side: "SHORT", entryPrice: 110, exitPrice: 100, quantity: 10 }
+          expected: 100
+          note: "(110-100)*10 = 100"
+        - input: { side: "LONG", entryPrice: 100, exitPrice: 90, quantity: 10 }
+          expected: -100
+          note: "(90-100)*10 = -100"
+
+    - id: "UT-005"
+      source_constraint: "INV-002"
+      description: "Net PnL = PnL + AdjustedCost (with null guards)"
+      test_type: "invariant"
+      cases:
+        - input: { PnL: 100, AdjustedCost: -5 }
+          expected: 95
+        - input: { PnL: 100, AdjustedCost: null }
+          expected: 100
+        - input: { PnL: null, AdjustedCost: null }
+          expected: 0
+
+    - id: "UT-006"
+      source_constraint: "PROP-001"
+      description: "R-multiple formula: netPnL / (riskPerShare × multiplier × qty)"
+      test_type: "invariant"
+      cases:
+        - input: { netPnL: 200, riskPerShare: 2, multiplier: 1, quantity: 50 }
+          expected: 2.0
+          note: "200 / (2*1*50) = 2.0"
+        - input: { netPnL: -100, riskPerShare: 1, multiplier: 5, quantity: 20 }
+          expected: -1.0
+          note: "-100 / (1*5*20) = -1.0"
+        - input: { netPnL: 100, riskPerShare: 0, multiplier: 1, quantity: 10 }
+          expected: null
+          note: "riskPerShare=0 → null (division by zero guard)"
+        - input: { netPnL: 100, riskPerShare: null, multiplier: 1, quantity: 10 }
+          expected: null
+          note: "no StopLoss → null"
+
+    - id: "UT-007"
+      source_constraint: "PRE-005"
+      description: "Symbol mapping cascade: user → default → regex → strip → as-is"
+      test_type: "validation"
+      cases:
+        - input: { symbol: "NQ", userMappings: { "NQ": "NQ=F" } }
+          expected: "NQ=F"
+        - input: { symbol: "MNQ", userMappings: {} }
+          expected: "MNQ=F"
+          note: "from DEFAULT_SYMBOL_MAP"
+        - input: { symbol: "ESZ3", userMappings: {} }
+          expected: "ES=F"
+          note: "regex strips futures month code"
+        - input: { symbol: "UNKNOWN", userMappings: {} }
+          expected: "UNKNOWN"
+          note: "falls through as-is"
+
+    - id: "UT-008"
+      source_constraint: "INV-002"
+      description: "Side inference: getTradeSide infers LONG/SHORT from prices and PnL"
+      test_type: "invariant"
+      cases:
+        - input: { entryPrice: 100, exitPrice: 110, pnl: 100 }
+          expected: "LONG"
+        - input: { entryPrice: 110, exitPrice: 100, pnl: 100 }
+          expected: "SHORT"
+        - input: { entryPrice: 100, exitPrice: 100, pnl: 0 }
+          expected: "LONG"
+          note: "defaults to LONG when ambiguous"
+
+    - id: "UT-009"
+      source_constraint: "PRE-003"
+      description: "AI overall performance requires ≥3 evaluated trades"
+      test_type: "validation"
+      cases:
+        - input: { evaluatedTrades: 0 }
+          expected: "validation_error"
+          note: "0 evaluated trades → 400"
+        - input: { evaluatedTrades: 2 }
+          expected: "validation_error"
+          note: "2 evaluated trades → 400 (below threshold)"
+        - input: { evaluatedTrades: 3 }
+          expected: "valid"
+          note: "exactly 3 → passes threshold"
+        - input: { evaluatedTrades: 10 }
+          expected: "valid"
+
+  # ─────────────────────────────────────────────────────────────────
+  # INTEGRATION TESTS — validate architecture (module interfaces)
+  # File pattern: artifacts/tests/integration/*_test.ts
+  # ─────────────────────────────────────────────────────────────────
+  integration:
+    - id: "IT-001"
+      source_constraint: "INV-005"
+      description: "StorageKV singleton is the only active data path"
+      test_type: "contract"
+      setup: "Grep all route and service files for storage imports"
+      cases:
+        - scenario: "All routes import from StorageKV"
+          input: "grep -r 'storage' routes/ services/ | grep -v StorageService"
+          expected_status: "no imports from StorageService in active code"
+        - scenario: "Legacy StorageService not imported by any route"
+          input: "grep -r 'StorageService' routes/ services/ | grep -v 'storage/StorageService.ts'"
+          expected_status: "zero matches"
+
+    - id: "IT-002"
+      source_constraint: "PRE-001"
+      description: "POST /api/trades rejects malformed input via Zod schema"
+      test_type: "contract"
+      setup: "Start Fresh dev server or use handler directly"
+      cases:
+        - scenario: "Valid trade accepted"
+          input: { symbol: "AAPL", entryPrice: 150, exitPrice: 155, quantity: 100 }
+          expected_status: 200
+        - scenario: "Missing symbol"
+          input: { entryPrice: 150, exitPrice: 155, quantity: 100 }
+          expected_status: 400
+        - scenario: "entryPrice = 0 accepted (Q3 fix)"
+          input: { symbol: "AAPL", entryPrice: 0, exitPrice: 5, quantity: 100 }
+          expected_status: 200
+
+    - id: "IT-003"
+      source_constraint: "POST-001"
+      description: "saveTrade sets updatedAt and createdAt correctly"
+      test_type: "contract"
+      setup: "Use StorageKV singleton with test KV namespace"
+      cases:
+        - scenario: "First save sets createdAt and updatedAt"
+          input: { trade without timestamps }
+          expected_status: "both createdAt and updatedAt set to ~now"
+        - scenario: "Second save updates updatedAt only"
+          input: { save trade, wait, save again }
+          expected_status: "updatedAt > createdAt"
+
+    - id: "IT-004"
+      source_constraint: "POST-003"
+      description: "AI Coach route persists AI fields on trade after evaluation"
+      test_type: "contract"
+      setup: "Mock AICoachService to return deterministic result"
+      cases:
+        - scenario: "Successful evaluation sets all AI fields"
+          input: { tradeId: "test_123", mockResult: { advice: "Good trade", rating: 4, grade: "B+" } }
+          expected_status: 200
+          expected_fields: ["AIAdvice", "AIRating", "AIGrade", "AIProvider", "AITimestamp"]
+        - scenario: "Non-existent trade returns 404"
+          input: { tradeId: "nonexistent" }
+          expected_status: 404
+
+    - id: "IT-005"
+      source_constraint: "PRE-004"
+      description: "Backup import validates app field"
+      test_type: "contract"
+      setup: "Prepare test backup payloads"
+      cases:
+        - scenario: "Valid PipPaper backup accepted"
+          input: { version: 1, app: "PipPaper", exportedAt: "2026-01-01", data: { trades: [], notes: [], setups: [], tags: [] } }
+          expected_status: 200
+        - scenario: "Non-PipPaper backup rejected"
+          input: { version: 1, app: "OtherApp", data: {} }
+          expected_status: 400
+
+    - id: "IT-006"
+      source_constraint: "INV-006"
+      description: "Backup import overwrites existing trades (documented behavior)"
+      test_type: "contract"
+      setup: "Create trade with annotations, then import backup with same BrokerTradeID"
+      cases:
+        - scenario: "Backup import replaces existing trade"
+          input: { existing trade with AIAdvice, backup has same BrokerTradeID without AIAdvice }
+          expected_status: 200
+          expected_result: "trade overwritten — AIAdvice removed"
+
+  # ─────────────────────────────────────────────────────────────────
+  # SYSTEM TESTS — validate system design
+  # File pattern: artifacts/tests/system/*_test.ts
+  # ─────────────────────────────────────────────────────────────────
+  system:
+    - id: "ST-001"
+      source_constraint: "PROP-001"
+      description: "KPI gross/net PnL conventions match documentation"
+      test_type: "invariant"
+      scenario: >
+        Create trades with known PnL and AdjustedCost values. Load dashboard
+        (GET /). Verify: totalPnL uses net (PnL+AdjustedCost), winRate uses
+        gross (PnL>0), profitFactor uses gross, expectancy uses net.
+
+    - id: "ST-002"
+      source_constraint: "INV-004"
+      description: "Kline chunking transparent for large datasets"
+      test_type: "cascade"
+      scenario: >
+        Save kline data exceeding 50KB to KV. Read it back. Verify:
+        metadata stored as {__chunked: true, count: N}, chunks at indexed keys,
+        reassembled data byte-identical to original.
+
+    - id: "ST-003"
+      source_constraint: "INV-004"
+      description: "Legacy unchunked KlineData migrates transparently on read"
+      test_type: "invariant"
+      scenario: >
+        Write kline data in legacy format (directly on trade or single KV value).
+        Read via API. Verify data returned correctly, migration to chunked format
+        happens transparently.
+
+    - id: "ST-004"
+      source_constraint: "PROP-002"
+      description: "Local-first: trade data not transmitted externally except AI provider"
+      test_type: "invariant"
+      scenario: >
+        Audit all network calls during normal operations (list, create, update).
+        Verify no data sent to external endpoints except Yahoo (klines) and
+        Gemini/Ollama (AI coach, which intentionally receives trade data).
+
+    - id: "ST-005"
+      source_constraint: "PROP-003"
+      description: "Zero-config database works without DATABASE_URL"
+      test_type: "invariant"
+      scenario: >
+        Start fresh instance without DATABASE_URL env var. Create a trade.
+        Verify it persists and is retrievable. Deno KV initializes automatically.
+
+  # ─────────────────────────────────────────────────────────────────
+  # ACCEPTANCE TESTS — validate business requirements
+  # File pattern: artifacts/tests/acceptance/*_test.ts
+  # ─────────────────────────────────────────────────────────────────
+  acceptance:
+    - id: "AT-001"
+      source_requirement: "CSV import preserves manual annotations"
+      validates: "INV-003"
+      description: "End-to-end: import CSV, verify existing trades not overwritten"
+      steps:
+        - "Create trade with BrokerTradeID='test_001', add SetupIDs=[1,2], Rating=5"
+        - "Prepare CSV containing BrokerTradeID='test_001' with different data"
+        - "Run CSV import via ImporterService.importTradovateTrades()"
+        - "Verify trade 'test_001' still has SetupIDs=[1,2], Rating=5"
+
+    - id: "AT-002"
+      source_requirement: "Backup round-trips losslessly"
+      validates: "POST-004 + PRE-004"
+      description: "Export → wipe → import → verify all entities match"
+      steps:
+        - "Populate KV with 5 trades, 3 notes, 2 setups, 4 tags (varied data)"
+        - "GET /api/export → save gzip file"
+        - "Clear all KV data"
+        - "POST /api/import-backup with the gzip"
+        - "Verify trades, notes, setups, tags match original exactly"
+        - "Verify import response has correct counts"
+
+    - id: "AT-003"
+      source_requirement: "Import-backup overwrites without dedup (documented)"
+      validates: "INV-006"
+      description: "Backup import replaces existing trades — known behavior"
+      steps:
+        - "Create trade with annotations"
+        - "Prepare backup with same BrokerTradeID but different data"
+        - "Import backup"
+        - "Verify trade was overwritten (annotations lost)"
+        - "Verify no error or dedup warning"
+
+    - id: "AT-004"
+      source_requirement: "entryPrice=0 accepted (Q3 fix)"
+      validates: "PRE-001"
+      description: "Manual entry with $0 price is accepted, not rejected"
+      steps:
+        - "POST /api/trades with entryPrice=0, valid other fields"
+        - "Verify response status 200"
+        - "GET /api/trades → verify trade created with entryPrice=0"
+
+# ─────────────────────────────────────────────────────────────────
+# COVERAGE MATRIX — every spec element mapped to test contract(s)
+# ─────────────────────────────────────────────────────────────────
+coverage:
+  INV-001: [UT-003]
+  INV-002: [UT-002, UT-005, UT-008]
+  INV-003: [AT-001]
+  INV-004: [ST-002, ST-003]
+  INV-005: [IT-001]
+  INV-006: [IT-006, AT-003]
+  PRE-001: [UT-001, UT-004, IT-002, AT-004]
+  PRE-002: [IT-004]
+  PRE-003: [UT-009]
+  PRE-004: [IT-005, AT-002]
+  PRE-005: [UT-007]
+  POST-001: [IT-003]
+  POST-002: [AT-001]
+  POST-003: [IT-004]
+  POST-004: [AT-002]
+  PROP-001: [UT-006, ST-001]
+  PROP-002: [ST-004]
+  PROP-003: [ST-005]

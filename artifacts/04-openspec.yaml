@@ -1,0 +1,627 @@
+apiVersion: openspec/v1
+kind: ComponentSpec
+
+metadata:
+  name: "pippaper-core"
+  version: "0.1.0"
+  description: "Trade journaling & analytics platform — privacy-first, local-first via Deno KV"
+  team: "PipPaper"
+  tags: [trading, journal, analytics, deno, fresh, crispify]
+
+# ─────────────────────────────────────────────────────────────────
+# INVARIANTS — things that must ALWAYS be true
+# Crispify note: These are DESCRIPTIVE (what the code does), not prescriptive.
+# ─────────────────────────────────────────────────────────────────
+invariants:
+  - id: INV-001
+    name: "BrokerTradeID is unique trade primary key"
+    description: >
+      Every trade is keyed by its BrokerTradeID (string) in Deno KV namespace
+      ["trades", brokerTradeId]. Manual trades use BrokerTradeID = "manual_${timestamp}".
+      Tradovate imports use BrokerTradeID = "${buyFillId}_${sellFillId}".
+      BrokerTradeID never changes after creation. Two trades with the same
+      BrokerTradeID cannot coexist — the later write silently overwrites.
+    severity: critical
+    formal: "forall t1 t2 : Trade, t1.BrokerTradeID = t2.BrokerTradeID -> t1 = t2"
+    verifiable: true
+    verification:
+      method: runtime-validator
+      details: "Zod schema ensures BrokerTradeID is non-empty string; storage layer enforces KV key uniqueness"
+
+  - id: INV-002
+    name: "AdjustedCost stored as negative number"
+    description: >
+      Trade.AdjustedCost represents commissions/fees. It is stored as a NEGATIVE
+      number. Net PnL = (PnL || 0) + (AdjustedCost || 0). The || 0 guards handle
+      null/undefined values. This sign convention is used consistently across
+      StorageKV, dashboard KPIs, and the trade detail page.
+    severity: high
+    formal: "forall t : Trade, t.AdjustedCost != null -> t.AdjustedCost <= 0"
+    verifiable: true
+    verification:
+      method: runtime-validator
+      details: "Zod schema can validate AdjustedCost <= 0 when present"
+
+  - id: INV-003
+    name: "CSV import never overwrites existing trades"
+    description: >
+      TradovateImporter.importTradovateTrades() checks for existing BrokerTradeID
+      before saving. If a trade with that ID already exists, it is SKIPPED — never
+      overwritten. This protects manual annotations on imported trades.
+      NOTE: This dedup applies to CSV import ONLY. Backup import (POST /api/import-backup)
+      does NOT dedup — it overwrites. See INV-006.
+    severity: critical
+    formal: "forall csvImport : Import, existing : Trade, csvImport.brokerTradeID = existing.BrokerTradeID -> existing preserved"
+    verifiable: true
+    verification:
+      method: runtime-validator
+      details: "ImporterService checks storage.getTrade() before saveTrade()"
+
+  - id: INV-004
+    name: "Kline data chunked when exceeding 50KB"
+    description: >
+      Kline data larger than CHUNK_SIZE (50,000 bytes) is split into chunks
+      stored at ["klines", tradeId, chunkIndex] with metadata at
+      ["klines", tradeId] = {__chunked: true, count: N}. This stays safely under
+      Deno KV's 64KB value limit. Legacy unchunked KlineData (stored directly on
+      Trade or at ["klines", tradeId]) is migrated transparently on read.
+    severity: high
+    formal: "forall k : KlineData, serialized_size(k) > 50000 -> exists chunks, length(chunks) = ceil(size/50000) AND k = reassemble(chunks)"
+    verifiable: true
+    verification:
+      method: runtime-validator
+      details: "StorageKV.saveKlineData checks byte size and splits if > CHUNK_SIZE"
+
+  - id: INV-005
+    name: "StorageKV singleton is the only active data path"
+    description: >
+      The exported `storage` singleton from StorageKV.ts is the ONLY storage
+      backend used by all routes and services. The legacy StorageService.ts
+      (SQLite adapter) is dead code — instantiated as `store` but never imported
+      by any route or service. All data flows through StorageKV.
+    severity: high
+    formal: "forall r : Route, r.storage = StorageKV.storage singleton"
+    verifiable: true
+    verification:
+      method: audit-check
+      details: "Integration test verifies no route imports from StorageService"
+
+  - id: INV-006
+    name: "Backup import overwrites without dedup"
+    description: >
+      POST /api/import-backup calls saveTrade() directly for each trade in the
+      backup, WITHOUT checking if a trade with that BrokerTradeID already exists.
+      This means backup import can overwrite trades that have been manually
+      annotated since the backup was created. This is DIFFERENT from CSV import
+      (INV-003) which dedupes. Documented as known behavior — not a bug per se,
+      but flagged as medium severity data-loss risk.
+    severity: medium
+    formal: "forall backupImport : BackupImport, existing : Trade, backupImport.brokerTradeID = existing.BrokerTradeID -> existing replaced"
+    verifiable: true
+    verification:
+      method: runtime-validator
+      details: "Test confirms import-backup overwrites existing trades"
+
+# ─────────────────────────────────────────────────────────────────
+# PRECONDITIONS — things that must be true BEFORE an operation
+# ─────────────────────────────────────────────────────────────────
+preconditions:
+  - id: PRE-001
+    name: "Manual trade entry required fields"
+    operation: "POST /api/trades"
+    description: >
+      Manual trade entry requires: symbol (non-empty string), entryPrice (number,
+      NOT using falsy check — 0 is valid), exitPrice (number), quantity (number).
+      Optional fields: side ("LONG"|"SHORT"), stopLoss, profitTarget, broker,
+      currency, pnl, adjustedCost, entryTimestamp, exitTimestamp, entryReason,
+      exitReason, setupIds, mistakes, entryNotes, exitNotes.
+      Q3 DECISION (FIXED): entryPrice validation uses proper type checking
+      (typeof number or parseable numeric string), NOT !entryPrice which
+      incorrectly rejects 0.
+    severity: critical
+    formal: "symbol : nonempty_string AND entryPrice : number AND exitPrice : number AND quantity : number"
+    validation:
+      method: input-validation
+      details: "Zod schema validates required fields with proper numeric type checking (not truthy check)"
+
+  - id: PRE-002
+    name: "AI Coach trade evaluation requires existing trade"
+    operation: "POST /api/ai-coach"
+    description: >
+      The trade referenced by tradeId must exist in storage. If not found,
+      returns 404. The trade must have enough data for the AI to evaluate
+      (entry/exit prices, symbol, PnL).
+    severity: high
+    formal: "exists t : Trade, t.BrokerTradeID = tradeId"
+    validation:
+      method: input-validation
+      details: "storage.getTrade(tradeId) must return non-null before proceeding"
+
+  - id: PRE-003
+    name: "AI overall performance requires ≥3 evaluated trades"
+    operation: "POST /api/ai-coach-general"
+    description: >
+      The overall performance evaluation requires at least 3 trades that have
+      been individually evaluated (have AIAdvice set). With fewer than 3,
+      returns 400 with an error message.
+    severity: high
+    formal: "count(trades where AIAdvice != null) >= 3"
+    validation:
+      method: input-validation
+      details: "Filter trades list for AIAdvice != null, assert length >= 3"
+
+  - id: PRE-004
+    name: "Backup import requires PipPaper format"
+    operation: "POST /api/import-backup"
+    description: >
+      The backup JSON must have app === "PipPaper". No version check is performed
+      despite the format including a version field. The import accepts .gz or
+      plain JSON.
+    severity: high
+    formal: "backup.app = 'PipPaper'"
+    validation:
+      method: input-validation
+      details: "Check parsed JSON has app field equal to 'PipPaper'"
+
+  - id: PRE-005
+    name: "Kline fetch requires resolvable symbol"
+    operation: "GET /api/klines"
+    description: >
+      The trade's symbol must be resolvable through the symbol mapping cascade:
+      user mappings → DEFAULT_SYMBOL_MAP → regex for futures codes → strip futures
+      suffix → as-is. If the Yahoo Finance API cannot find the symbol, kline fetch
+      fails gracefully (returns existing cache or empty).
+    severity: medium
+    formal: "mapSymbol(trade.Symbol) resolves to a Yahoo Finance ticker"
+    validation:
+      method: input-validation
+      details: "SymbolConfig.getSymbolMapping() must return non-empty string"
+
+# ─────────────────────────────────────────────────────────────────
+# POSTCONDITIONS — things that must be true AFTER an operation
+# ─────────────────────────────────────────────────────────────────
+postconditions:
+  - id: POST-001
+    name: "Trade has updatedAt after save"
+    operation: "saveTrade"
+    description: >
+      After saveTrade() completes, the trade object in KV has updatedAt set to
+      Date.now()/1000 (unix seconds). createdAt is set on first save if not
+      already present.
+    severity: high
+    formal: "forall t : Trade, after saveTrade(t) -> t.updatedAt = now AND (t.createdAt set if first save)"
+    guarantee: "StorageKV.saveTrade() sets updatedAt = Date.now()/1000 before kv.set()"
+    validation:
+      method: output-assertion
+      details: "Read trade back from KV and verify updatedAt is set and recent"
+
+  - id: POST-002
+    name: "CSV import preserves existing trades"
+    operation: "importTradovateTrades"
+    description: >
+      After CSV import completes, no previously-existing trade has been modified.
+      Trades that already existed (by BrokerTradeID) were skipped. Only new trades
+      were saved.
+    severity: critical
+    formal: "forall t : Trade, before import t exists -> after import t unchanged"
+    guarantee: "ImporterService checks getTrade() before saveTrade(); existing trades skipped"
+    validation:
+      method: output-assertion
+      details: "Before import, snapshot existing trades. After import, verify each is unchanged."
+
+  - id: POST-003
+    name: "AI evaluation persists advice on trade"
+    operation: "POST /api/ai-coach"
+    description: >
+      After successful AI evaluation, the trade in KV has AIAdvice, AIRating,
+      AIGrade, AIProvider, and AITimestamp fields set. The trade is re-saved with
+      these fields via updateTrade().
+    severity: high
+    formal: "after evaluate -> t.AIAdvice != null AND t.AIProvider != null AND t.AITimestamp != null"
+    guarantee: "AICoachService returns result; route calls updateTrade with AI fields"
+    validation:
+      method: output-assertion
+      details: "Read trade back, verify AIAdvice/AIRating/AIGrade/AIProvider/AITimestamp set"
+
+  - id: POST-004
+    name: "Export includes all entities"
+    operation: "GET /api/export"
+    description: >
+      The export gzip contains a JSON object with version: 1, app: "PipPaper",
+      exportedAt (ISO string), and data: {trades, notes, setups, tags}. All
+      entities currently in KV are included. The response is gzipped with
+      Content-Type application/gzip and Content-Disposition attachment header.
+    severity: high
+    formal: "export.data.trades = all trades AND export.data.notes = all notes AND export.data.setups = all setups AND export.data.tags = all tags"
+    guarantee: "Export route reads all entities from KV and serializes into the standard format"
+    validation:
+      method: output-assertion
+      details: "Decompress gzip, parse JSON, verify structure matches {version, app, exportedAt, data}"
+
+# ─────────────────────────────────────────────────────────────────
+# PROPERTIES — quality attributes and behavioral characteristics
+# ─────────────────────────────────────────────────────────────────
+properties:
+  - id: PROP-001
+    name: "KPI gross/net inconsistency is documented"
+    description: >
+      Dashboard KPIs use MIXED PnL conventions (this is current behavior,
+      documented not fixed — Q1 decision):
+      - totalPnL = Σ (PnL||0) + (AdjustedCost||0) → NET (includes commissions)
+      - expectancy = totalPnL / count → NET
+      - winRate = (wins/count)×100 where win = PnL > 0 → GROSS (ignores commissions)
+      - profitFactor = grossProfit/grossLoss → GROSS
+      - avgWin, avgLoss, bestTrade, worstTrade, streaks → GROSS
+      
+      This means a trade with PnL=+$5 and commission=-$10 counts as a "win"
+      (PnL > 0) but contributes -$5 to totalPnL. Changing this is a future
+      bugfix/feature run, NOT part of crispify.
+    kind: safety
+    type: reliability
+    target:
+      metric: "documented inconsistency"
+    measurement:
+      method: test-assertion
+      details: "System test verifies each KPI uses its documented PnL convention"
+
+  - id: PROP-002
+    name: "Local-first data storage"
+    description: >
+      All user data is stored locally via Deno KV. No trade data, notes, or
+      settings are transmitted to any external server. The ONLY external calls
+      are: Yahoo Finance (kline data fetching), Gemini/Ollama (AI coaching —
+      trade data IS sent to the AI provider), and the MCP server (local JSON-RPC).
+      Privacy-critical: data never leaves the user's machine except for AI
+      evaluation (which sends trade details to the configured LLM provider).
+    kind: safety
+    type: security
+    target:
+      metric: "no external data transmission except AI provider"
+    measurement:
+      method: audit-check
+      details: "Audit all network calls; verify only Yahoo/Gemini/Ollama endpoints contacted"
+
+  - id: PROP-003
+    name: "Zero-config database"
+    description: >
+      Deno KV requires no external database server, no connection string, no
+      authentication. The database is initialized automatically on first access.
+      DATABASE_URL env var is parsed but optional. This is a core value prop
+      vs TradeZella — works out of the box.
+    kind: liveness
+    type: reliability
+    target:
+      metric: "no setup required"
+    measurement:
+      method: test-assertion
+      details: "Integration test starts fresh instance without any DB config"
+
+# ─────────────────────────────────────────────────────────────────
+# INTERFACES — external API boundaries
+# ─────────────────────────────────────────────────────────────────
+interfaces:
+  - id: API-001
+    name: "List Trades"
+    type: rest
+    method: GET
+    path: "/api/trades"
+    description: "Returns all trades in storage, no filtering or pagination"
+    request:
+      content_type: none
+      fields: []
+    response:
+      status: 200
+      fields:
+        - name: trades
+          type: "Trade[]"
+          description: "Array of all trades"
+    postconditions: []
+    errors:
+      - status: 500
+        condition: "KV read failure"
+
+  - id: API-002
+    name: "Create Manual Trade"
+    type: rest
+    method: POST
+    path: "/api/trades"
+    description: >
+      Creates a manually-entered trade. Calculates PnL if not provided.
+      BrokerTradeID auto-generated as "manual_${Date.now()}".
+    request:
+      content_type: application/json
+      fields:
+        - name: symbol
+          type: string
+          required: true
+          constraints: ["length > 0"]
+        - name: entryPrice
+          type: number
+          required: true
+          constraints: ["typeof number OR parseable numeric string", "0 is valid"]
+        - name: exitPrice
+          type: number
+          required: true
+          constraints: ["typeof number"]
+        - name: quantity
+          type: number
+          required: true
+          constraints: ["typeof number"]
+        - name: side
+          type: string
+          required: false
+          constraints: ["enum: LONG | SHORT"]
+        - name: pnl
+          type: number
+          required: false
+          constraints: ["calculated if omitted: SHORT ? (entry-exit)*qty : (exit-entry)*qty"]
+        - name: stopLoss
+          type: number
+          required: false
+        - name: profitTarget
+          type: number
+          required: false
+        - name: broker
+          type: string
+          required: false
+        - name: currency
+          type: string
+          required: false
+        - name: adjustedCost
+          type: number
+          required: false
+          constraints: ["should be negative (commission convention)"]
+        - name: entryTimestamp
+          type: number
+          required: false
+          constraints: ["unix seconds"]
+        - name: exitTimestamp
+          type: number
+          required: false
+          constraints: ["unix seconds"]
+    response:
+      status: 200
+      fields:
+        - name: success
+          type: boolean
+        - name: trade
+          type: Trade
+    preconditions: [PRE-001]
+    postconditions: [POST-001]
+    errors:
+      - status: 400
+        condition: "missing required fields (symbol, entryPrice, exitPrice, quantity)"
+
+  - id: API-003
+    name: "Delete Trade"
+    type: rest
+    method: DELETE
+    path: "/api/trades"
+    description: "Deletes a trade by BrokerTradeID"
+    request:
+      content_type: none
+      fields:
+        - name: id
+          type: string
+          required: true
+          constraints: ["BrokerTradeID of the trade to delete"]
+    response:
+      status: 200
+      fields:
+        - name: success
+          type: boolean
+    errors:
+      - status: 400
+        condition: "missing id parameter"
+
+  - id: API-004
+    name: "AI Coach Evaluate Trade"
+    type: rest
+    method: POST
+    path: "/api/ai-coach"
+    description: >
+      Evaluates a single trade using the configured AI provider (Gemini or Ollama).
+      Persists AIAdvice, AIRating, AIGrade, AIProvider, AITimestamp on the trade.
+    request:
+      content_type: application/json
+      fields:
+        - name: tradeId
+          type: string
+          required: true
+          constraints: ["BrokerTradeID"]
+        - name: journalNotes
+          type: string
+          required: false
+        - name: chartImage
+          type: string
+          required: false
+          constraints: ["base64-encoded image"]
+    response:
+      status: 200
+      fields:
+        - name: advice
+          type: string
+        - name: rating
+          type: number
+          constraints: ["1-5, extracted via regex from LLM response"]
+        - name: grade
+          type: string
+          constraints: ["A+ to F, extracted via regex"]
+        - name: provider
+          type: string
+        - name: model
+          type: string
+    preconditions: [PRE-002]
+    postconditions: [POST-003]
+    errors:
+      - status: 404
+        condition: "trade not found"
+      - status: 500
+        condition: "AI provider error"
+
+  - id: API-005
+    name: "Get Cached Overall Advice"
+    type: rest
+    method: GET
+    path: "/api/ai-coach-general"
+    description: "Returns cached overall performance advice if available"
+    request:
+      content_type: none
+      fields: []
+    response:
+      status: 200
+      fields:
+        - name: advice
+          type: string
+          constraints: ["null if not yet generated"]
+    errors: []
+
+  - id: API-006
+    name: "Regenerate Overall Advice"
+    type: rest
+    method: POST
+    path: "/api/ai-coach-general"
+    description: "Regenerates overall performance evaluation (cached in KV)"
+    request:
+      content_type: none
+      fields: []
+    response:
+      status: 200
+      fields:
+        - name: advice
+          type: string
+    preconditions: [PRE-003]
+    errors:
+      - status: 400
+        condition: "fewer than 3 evaluated trades"
+      - status: 500
+        condition: "AI provider error"
+
+  - id: API-007
+    name: "Get Klines"
+    type: rest
+    method: GET
+    path: "/api/klines"
+    description: >
+      Returns candle data for a trade's symbol around its entry/exit times.
+      Checks KV cache first, migrates legacy on-trade KlineData, fetches from
+      Yahoo Finance if missing or refresh=1.
+    request:
+      content_type: none
+      fields:
+        - name: tradeId
+          type: string
+          required: true
+          constraints: ["BrokerTradeID"]
+        - name: refresh
+          type: string
+          required: false
+          constraints: ["if '1', forces re-fetch from Yahoo Finance"]
+    response:
+      status: 200
+      fields:
+        - name: candles
+          type: "Candle[]"
+          constraints: ["{t, o, h, l, c, v}"]
+        - name: interval
+          type: string
+        - name: trade
+          type: Trade
+          constraints: ["trade overlay fields for charting"]
+    preconditions: [PRE-005]
+    errors:
+      - status: 404
+        condition: "trade not found"
+
+  - id: API-008
+    name: "Export All Data"
+    type: rest
+    method: GET
+    path: "/api/export"
+    description: "Exports all trades, notes, setups, and tags as a gzipped JSON backup"
+    request:
+      content_type: none
+      fields: []
+    response:
+      status: 200
+      fields:
+        - name: body
+          type: binary
+          constraints: ["gzip-compressed JSON"]
+    postconditions: [POST-004]
+    errors: []
+
+  - id: API-009
+    name: "Import Backup"
+    type: rest
+    method: POST
+    path: "/api/import-backup"
+    description: >
+      Imports a gzipped or plain JSON backup. Validates app === "PipPaper".
+      OVERWRITES existing trades (no dedup — see INV-006).
+    request:
+      content_type: application/json
+      fields:
+        - name: body
+          type: binary
+          required: true
+          constraints: ["gzip or plain JSON with {version, app, exportedAt, data}"]
+    response:
+      status: 200
+      fields:
+        - name: success
+          type: boolean
+        - name: imported
+          type: object
+          constraints: ["counts: {trades, notes, setups, tags}"]
+    preconditions: [PRE-004]
+    errors:
+      - status: 400
+        condition: "app field !== 'PipPaper'"
+      - status: 400
+        condition: "invalid JSON or gzip"
+
+# ─────────────────────────────────────────────────────────────────
+# V-MODEL TEST MAPPING
+# ─────────────────────────────────────────────────────────────────
+test_mapping:
+  acceptance:
+    - description: "CSV import preserves manual annotations"
+      validates: "INV-003: Existing trades are never overwritten by CSV import"
+      steps:
+        - "Create a trade with manual annotations (SetupIDs, Rating, AIAdvice)"
+        - "Import a CSV containing the same BrokerTradeID"
+        - "Verify the original trade is unchanged — annotations preserved"
+    - description: "Backup round-trips losslessly"
+      validates: "POST-004 + PRE-004: Export then import preserves all data"
+      steps:
+        - "Populate KV with trades, notes, setups, tags"
+        - "Export via GET /api/export"
+        - "Clear KV"
+        - "Import the backup via POST /api/import-backup"
+        - "Verify all entities match original"
+  system:
+    - description: "KPI gross/net PnL conventions match documentation"
+      validates: "PROP-001: Each KPI uses its documented PnL convention"
+    - description: "Kline chunking transparent for large datasets"
+      validates: "INV-004: Large kline data splits and reassembles correctly"
+    - description: "Local-first: no external data transmission except AI provider"
+      validates: "PROP-002: Trade data stays local"
+  integration:
+    - description: "StorageKV singleton is the only data path"
+      validates: "INV-005: No route imports from legacy StorageService"
+    - description: "Entity schemas validate at API boundaries"
+      validates: "PRE-001: Malformed trades rejected by Zod schema"
+    - description: "AI evaluation persists advice on trade"
+      validates: "POST-003: AI fields set after POST /api/ai-coach"
+  unit:
+    - description: "R-multiple formula calculation"
+      validates: "Component: netPnL / (riskPerShare × multiplier × qty)"
+    - description: "Side inference from prices and PnL"
+      validates: "Component: getTradeSide() infers LONG/SHORT"
+    - description: "PnL calculation for LONG vs SHORT"
+      validates: "PRE-001: SHORT = (entry-exit)*qty, LONG = (exit-entry)*qty"
+    - description: "AdjustedCost sign convention"
+      validates: "INV-002: AdjustedCost is negative (commission)"
+    - description: "Symbol mapping cascade"
+      validates: "PRE-005: User → default → regex → strip → as-is"

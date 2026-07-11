@@ -2,7 +2,7 @@ apiVersion: crispy-v/state/v1
 pipeline:
   task: "Crispify PipPaper \u2014 extract OpenSpec contracts from existing codebase"
   started_at: '2026-07-11T12:00:00Z'
-  current_phase: CHECKPOINT_3
+  current_phase: STRUCTURE
   spec_format: openspec
   mode: crispify
   base_spec: null
@@ -24,15 +24,20 @@ phases:
     started_at: null
     completed_at: '2026-07-11T12:15:00Z'
   checkpoint_3:
-    status: awaiting_approval
-    approved_at: null
-    human_feedback: null
+    status: approved
+    approved_at: '2026-07-11T12:30:00Z'
+    human_feedback: 'Approved all recommendations: Q1=A (document gross/net as-is),
+      Q2=A (document import-backup overwrite as-is, medium severity), Q3=B (FIX entryPrice=0
+      bug with proper type checking), Q4=A (minimal guards at API boundaries only),
+      Q5=B (TradovateImporter: just pre/postconditions), Q6=B (AI Coach: simple precondition,
+      not state machine)'
   spec:
-    status: pending
-    artifact: null
-    started_at: null
-    completed_at: null
-    subagent_calls: []
+    status: completed
+    artifact: artifacts/04-openspec.yaml
+    started_at: '2026-07-11T12:30:00Z'
+    completed_at: '2026-07-11T12:45:00Z'
+    subagent_calls:
+    - none - generated directly (context-rich crispify)
   structure:
     status: pending
     artifact: null
