@@ -2,7 +2,7 @@ apiVersion: crispy-v/state/v1
 pipeline:
   task: "Crispify PipPaper \u2014 extract OpenSpec contracts from existing codebase"
   started_at: '2026-07-11T12:00:00Z'
-  current_phase: STRUCTURE
+  current_phase: CHECKPOINT_5
   spec_format: openspec
   mode: crispify
   base_spec: null
@@ -39,12 +39,12 @@ phases:
     subagent_calls:
     - none - generated directly (context-rich crispify)
   structure:
-    status: pending
-    artifact: null
+    status: completed
+    artifact: artifacts/05-structure.md
     started_at: null
-    completed_at: null
+    completed_at: '2026-07-11T12:55:00Z'
   checkpoint_5:
-    status: pending
+    status: awaiting_approval
     approved_at: null
     human_feedback: null
   plan:
