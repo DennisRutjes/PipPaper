@@ -1,0 +1,100 @@
+apiVersion: crispy-v/state/v1
+pipeline:
+  task: "Crispify PipPaper \u2014 extract OpenSpec contracts from existing codebase"
+  started_at: '2026-07-11T12:00:00Z'
+  current_phase: CHECKPOINT_3
+  spec_format: openspec
+  mode: crispify
+  base_spec: null
+  crispify_target: /Users/drutjes/Documents/development/PipPaper
+phases:
+  context:
+    status: completed
+    artifact: artifacts/01-questions.md
+    started_at: '2026-07-11T12:00:00Z'
+    completed_at: '2026-07-11T12:05:00Z'
+  research:
+    status: completed
+    artifact: artifacts/02-research.md
+    started_at: null
+    completed_at: '2026-07-11T12:10:00Z'
+  ideate:
+    status: completed
+    artifact: artifacts/03-design.md
+    started_at: null
+    completed_at: '2026-07-11T12:15:00Z'
+  checkpoint_3:
+    status: awaiting_approval
+    approved_at: null
+    human_feedback: null
+  spec:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+    subagent_calls: []
+  structure:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+  checkpoint_5:
+    status: pending
+    approved_at: null
+    human_feedback: null
+  plan:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+  preflight:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+    assumptions_verified: 0
+    assumptions_failed: 0
+    assumptions_warned: 0
+  implement:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+    vertical_phases: []
+  verify:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+    unit_tests:
+      pass: 0
+      fail: 0
+    integration_tests:
+      pass: 0
+      fail: 0
+    system_tests:
+      pass: 0
+      fail: 0
+    acceptance_tests:
+      pass: 0
+      fail: 0
+  reconcile:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+    amendments: 0
+  checkpoint_9:
+    status: pending
+    approved_at: null
+    human_feedback: null
+  retro:
+    status: pending
+    artifact: null
+    started_at: null
+    completed_at: null
+discoveries: []
+assumptions: []
+subagent_failures: []
+backtrack_events: []
+iterations: []
