@@ -128,14 +128,52 @@ deno task start
 
 ### Configure AI Coach
 
-Open `.env` and add your API key:
+PipPaper supports two AI providers for the Trade Coach: **Google Gemini** (cloud) or **Ollama** (local). Set `LLM_PROVIDER` in `.env` to choose.
+
+#### Option 1: Google Gemini (cloud, default)
+
+1. Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
+2. Open `.env` and set:
 
 ```env
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your_key_here
 ```
 
-Go to **Settings > General** to select your preferred AI Model (e.g. Gemini 1.5 Pro, Gemini 1.5 Flash).
+3. Go to **Settings > General** to pick a model (e.g. Gemini 1.5 Pro, Gemini 1.5 Flash). The list is discovered dynamically from your API key.
+
+#### Option 2: Ollama (local, fully private)
+
+For a 100% offline setup, use [Ollama](https://ollama.com/) to run an LLM locally. No API key required.
+
+1. [Install Ollama](https://ollama.com/download) and start the service (`ollama serve` or launch the desktop app).
+2. Pull a model. `gemma4` is the default, but any Ollama-compatible model works:
+
+```bash
+ollama pull gemma4      # default
+# or any other model:
+ollama pull llama3.1
+ollama pull qwen2.5
+```
+
+3. Open `.env` and switch the provider:
+
+```env
+LLM_PROVIDER=ollama
+
+# Optional — defaults shown below
+OLLAMA_BASE_URL=http://localhost:11434   # Ollama server URL
+OLLAMA_MODEL=gemma4                      # model name (must match `ollama pull`)
+```
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `LLM_PROVIDER` | yes | `gemini` | `gemini` or `ollama` |
+| `OLLAMA_BASE_URL` | no | `http://localhost:11434` | Ollama API base URL |
+| `OLLAMA_MODEL` | no | `gemma4` | Model tag (must be pulled via `ollama pull <tag>`) |
+| `GEMINI_API_KEY` | gemini only | — | Google AI Studio API key |
+
+> **Note:** The Ollama provider sends a text-only prompt, so chart images are ignored. Gemini receives the chart screenshot alongside the prompt for richer feedback. The coach rates trades on execution quality (1–5 stars, A+ to F grade), not raw P&L.
 
 ---
 
@@ -149,7 +187,7 @@ Go to **Settings > General** to select your preferred AI Model (e.g. Gemini 1.5 
 | Database | [Deno KV](https://deno.com/kv) (local, zero-config) |
 | Charts | Canvas API + [Fresh Charts](https://deno.land/x/fresh_charts) |
 | Rich Editor | [Quill](https://quilljs.com/) |
-| AI | Google Gemini (REST API) |
+| AI | Google Gemini (cloud) or [Ollama](https://ollama.com/) (local) |
 
 ---
 
