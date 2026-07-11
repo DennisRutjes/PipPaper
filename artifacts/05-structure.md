@@ -227,6 +227,6 @@ All functions must pass (CCN ≤ 15, length ≤ 60, params ≤ 5).
 - [ ] Is the phase ordering correct? (A: schemas → B: validators → C: unit tests → D: higher tests)
 - [ ] Are the test file locations under `artifacts/tests/` acceptable?
 - [ ] Is the Q3 fix approach (Zod validation replacing truthy check) correct?
-- [ ] Should dead code (StorageService.ts) be removed now, or left for a separate refactor?
+- [x] Dead code REMOVED (StorageService.ts, ports/, adapters/sqlite/) — CHECKPOINT_5 decision
 
-🛑 HUMAN CHECKPOINT — I will NOT proceed to Phase 6 until you approve.
+✅ CHECKPOINT_5 APPROVED — dead code removed, OpenSpec is canonical spec.

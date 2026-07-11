@@ -73,18 +73,18 @@ invariants:
       details: "StorageKV.saveKlineData checks byte size and splits if > CHUNK_SIZE"
 
   - id: INV-005
-    name: "StorageKV singleton is the only active data path"
+    name: "StorageKV singleton is the only data path"
     description: >
       The exported `storage` singleton from StorageKV.ts is the ONLY storage
-      backend used by all routes and services. The legacy StorageService.ts
-      (SQLite adapter) is dead code — instantiated as `store` but never imported
-      by any route or service. All data flows through StorageKV.
+      backend in the codebase. The legacy StorageService.ts, ports/Storage.ts,
+      and adapters/sqlite/ have been REMOVED (CHECKPOINT_5 decision — OpenSpec
+      is now the canonical spec). All data flows exclusively through StorageKV.
     severity: high
     formal: "forall r : Route, r.storage = StorageKV.storage singleton"
     verifiable: true
     verification:
       method: audit-check
-      details: "Integration test verifies no route imports from StorageService"
+      details: "Verify StorageService.ts, ports/, adapters/ directories do not exist"
 
   - id: INV-006
     name: "Backup import overwrites without dedup"

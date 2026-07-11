@@ -2,7 +2,7 @@ apiVersion: crispy-v/state/v1
 pipeline:
   task: "Crispify PipPaper \u2014 extract OpenSpec contracts from existing codebase"
   started_at: '2026-07-11T12:00:00Z'
-  current_phase: CHECKPOINT_5
+  current_phase: PLAN
   spec_format: openspec
   mode: crispify
   base_spec: null
@@ -44,9 +44,10 @@ phases:
     started_at: null
     completed_at: '2026-07-11T12:55:00Z'
   checkpoint_5:
-    status: awaiting_approval
-    approved_at: null
-    human_feedback: null
+    status: approved
+    approved_at: '2026-07-11T13:00:00Z'
+    human_feedback: "Approved. Dead code removed (StorageService.ts, ports/, adapters/sqlite/)\
+      \ \u2014 OpenSpec is canonical spec. entryPrice fix approach confirmed."
   plan:
     status: pending
     artifact: null
